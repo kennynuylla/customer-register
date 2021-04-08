@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Database.UnitOfWork.Interfaces;
+using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Services.DataStructures;
 using Services.Services.Interfaces;
@@ -8,7 +9,7 @@ using WebAPI.Models.Address;
 
 namespace WebAPI.Controllers
 {
-    [ApiController, Route("[controller]/[action]")]
+    [ApiController, Route("[controller]/[action]/{id?}")]
     public class AddressController : Controller
     {
         private readonly IAddressService _addressService;
@@ -18,6 +19,18 @@ namespace WebAPI.Controllers
         {
             _addressService = addressService;
             _unitOfWork = unitOfWork;
+        }
+        /// <summary>
+        /// Gets all information from specific address
+        /// </summary>
+        /// <returns>A newly created TodoItem</returns>
+        /// <response code="200">Returns the address</response>
+        /// <response code="500">An error occurred</response>     
+        [HttpGet]
+        public async Task<ActionResult<Address>> Get(Guid id)
+        {
+            throw new NotImplementedException();
+            // var result = await _addressService.DetailAsync(id);
         }
         
         /// <summary>

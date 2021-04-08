@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Domain.Models.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -23,9 +25,11 @@ namespace Database.Repositories.Base
             throw new NotImplementedException();
         }
 
-        public Task<TModel> Get(Guid uuid, params Func<TModel, object>[] includes)
+        public async Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes)
         {
-            throw new NotImplementedException();
+            var query = Set.Where(x => x.Uuid == uuid);
+            query = includes.Aggregate(query, (query, include) => query.Include(include));
+            return await query.FirstOrDefaultAsync();
         }
 
         public void Save(TModel model)

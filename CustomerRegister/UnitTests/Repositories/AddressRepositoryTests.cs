@@ -5,7 +5,6 @@ using Database.UnitOfWork.Interfaces;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Services.Repositories;
 using UnitTests.Base;
 using Xunit;

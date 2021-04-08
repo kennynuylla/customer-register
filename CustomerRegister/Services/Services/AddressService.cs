@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
@@ -19,6 +20,22 @@ namespace Services.Services
             _logger = logger;
         }
 
+        public async Task<IServiceResult> DetailAsync(Guid uuid)
+        {
+            try
+            {
+                var address = await _addressRepository.GetAsync(uuid);
+                
+                if (address is null) return new FailResult(new[] {"Unable to find address"});
+                return new SuccessResult<Address>(address);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while retrieving address", new {uuid});
+                return new FailResult();
+            }
+        }
+
         public IServiceResult Save(Address address)
         {
             try
@@ -28,7 +45,7 @@ namespace Services.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error while saving", address);
+                _logger.LogError(e, "Error while saving address", address);
                 return new FailResult();
             }
         }

@@ -5,7 +5,12 @@ namespace Services.DataStructures
     public record SuccessResult<T> : IServiceResult
     {
         public bool IsSuccessful => true;
-        public T Result { get; init; }
+        public T Result { get;}
+
+        public SuccessResult(T result)
+        {
+            Result = result;
+        }
     }
     
     public record SuccessResult: IServiceResult

@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Database.Configurations;
-using Domain.Interfaces;
 using Domain.Models;
+using Domain.Models.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Database

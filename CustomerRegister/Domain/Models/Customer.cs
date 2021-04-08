@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Domain.Interfaces;
+using Domain.Models.Interfaces;
 
 namespace Domain.Models
 {

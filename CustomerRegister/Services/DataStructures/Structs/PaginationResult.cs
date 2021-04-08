@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Domain.Interfaces;
+using Domain.Models.Interfaces;
 
 namespace Services.DataStructures.Structs
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Domain.Interfaces;
+using Domain.Models.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Services.DataStructures.Structs;
 using Services.Repositories;
@@ -9,10 +9,12 @@ namespace Database.Repositories.Base
 {
     internal abstract class RepositoryBase<TModel> : IRepositoryBase<TModel> where TModel: class, IUuidModel
     {
+        protected ApplicationContext _context;
         protected DbSet<TModel> Set;
 
         public RepositoryBase(ApplicationContext context)
         {
+            _context = context;
             Set = context.Set<TModel>();
         }
         
@@ -21,14 +23,19 @@ namespace Database.Repositories.Base
             throw new NotImplementedException();
         }
 
-        public TModel Get(Guid uuid, params Func<TModel, object>[] includes)
+        public Task<TModel> Get(Guid uuid, params Func<TModel, object>[] includes)
         {
             throw new NotImplementedException();
         }
 
         public void Save(TModel model)
         {
-            throw new NotImplementedException();
+            if (model.Uuid == default)
+            {
+                model.Uuid = Guid.NewGuid();
+                Set.Add(model);
+            }
+            else _context.Entry(model).State = EntityState.Modified;
         }
 
         public void Delete(Guid uuid)

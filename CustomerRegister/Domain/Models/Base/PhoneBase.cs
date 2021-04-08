@@ -1,6 +1,6 @@
 ﻿using System;
 using Domain.Enums;
-using Domain.Interfaces;
+using Domain.Models.Interfaces;
 
 namespace Domain.Models.Base
 {

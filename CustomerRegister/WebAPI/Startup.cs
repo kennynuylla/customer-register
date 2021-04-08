@@ -50,7 +50,17 @@ namespace WebAPI
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
             });
-            ConfigureDependencyInjection(services);
+            services
+                .AddUnitOfWork()
+                .AddRepositories()
+                .AddServices();
+
+            AddDatabase(services);
+        }
+
+        protected virtual void AddDatabase(IServiceCollection services)
+        {
+            services.AddDatabase(Configuration.GetConnectionString("development"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,15 +80,6 @@ namespace WebAPI
             {
                 endpoints.MapControllers();
             });
-        }
-
-        protected virtual void ConfigureDependencyInjection(IServiceCollection serviceCollection)
-        {
-            serviceCollection
-                .AddDatabase(Configuration.GetConnectionString("development"))
-                .AddUnitOfWork()
-                .AddRepositories()
-                .AddServices();
         }
     }
 }

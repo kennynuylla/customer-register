@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Database.UnitOfWork.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Services.DataStructures;
 using Services.Services.Interfaces;
 using WebAPI.Models.Address;
 
@@ -28,7 +29,19 @@ namespace WebAPI.Controllers
         [HttpPost]
         public async Task<ActionResult> Add(SaveAddressModel model)
         {
-            throw new NotImplementedException();
+            var address = model.GetAddress();
+            var result =  _addressService.Save(address);
+            if (result.IsSuccessful)
+            {
+                if (await _unitOfWork.SaveChangesAsync()) return new ContentResult() {StatusCode = 201};
+                return new ContentResult() {StatusCode = 500};
+            }
+
+            var failure = (FailResult) result;
+            return new JsonResult(failure.Errors)
+            {
+                StatusCode = 400
+            };
         }
     }
 }

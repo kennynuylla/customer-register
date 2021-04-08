@@ -9,6 +9,20 @@ namespace Database
     public static class DependencyInjectionExtensions
     {
 
+        public static IServiceCollection AddDatabase(this IServiceCollection serviceCollection, string connectionString)
+        {
+            serviceCollection.AddDbContext<ApplicationContext>(options =>
+            {
+                options.UseSqlServer(connectionString);
+            });
+
+            using var serviceProvider = serviceCollection.BuildServiceProvider();
+            using var context = serviceProvider.GetRequiredService<ApplicationContext>();
+            context.Database.Migrate();
+
+            return serviceCollection;
+        }
+
         public static IServiceCollection AddTestDatabase(this IServiceCollection serviceCollection, string databasePath)
         {
             serviceCollection.AddDbContext<ApplicationContext>(options =>

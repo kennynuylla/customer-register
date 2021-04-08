@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -11,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Services;
 
 namespace WebAPI
 {
@@ -41,7 +45,12 @@ namespace WebAPI
                         Url = new Uri("https://gitlab.com/kennynuylla")
                     }
                 });
+                
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
             });
+            ConfigureDependencyInjection(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -56,9 +65,20 @@ namespace WebAPI
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPI v1"));
             
             app.UseRouting();
-            app.UseAuthorization();
+            
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+        protected virtual void ConfigureDependencyInjection(IServiceCollection serviceCollection)
+        {
+            serviceCollection
+                .AddDatabase(Configuration.GetConnectionString("development"))
+                .AddUnitOfWork()
+                .AddRepositories()
+                .AddServices();
         }
     }
 }

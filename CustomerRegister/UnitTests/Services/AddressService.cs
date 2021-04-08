@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Database;
 using Database.UnitOfWork.Interfaces;
@@ -49,6 +50,8 @@ namespace UnitTests.Services
 
             Assert.True(result.IsSuccessful);
             Assert.NotEmpty(context.Addresses);
+            Assert.Equal(1,context.Addresses.Count());
+
         }
     }
 }

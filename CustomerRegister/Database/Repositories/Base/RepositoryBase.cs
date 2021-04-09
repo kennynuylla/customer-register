@@ -32,7 +32,7 @@ namespace Database.Repositories.Base
             return await query.FirstOrDefaultAsync();
         }
 
-        public void Save(TModel model)
+        public Guid Save(TModel model)
         {
             if (model.Uuid == default)
             {
@@ -40,6 +40,8 @@ namespace Database.Repositories.Base
                 Set.Add(model);
             }
             else _context.Entry(model).State = EntityState.Modified;
+
+            return model.Uuid;
         }
 
         public void Delete(Guid uuid)

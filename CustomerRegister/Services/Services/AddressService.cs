@@ -40,8 +40,8 @@ namespace Services.Services
         {
             try
             {
-                _addressRepository.Save(address);
-                return new SuccessResult();
+                var uuid = _addressRepository.Save(address);
+                return new SuccessResult<Guid>(uuid);
             }
             catch (Exception e)
             {

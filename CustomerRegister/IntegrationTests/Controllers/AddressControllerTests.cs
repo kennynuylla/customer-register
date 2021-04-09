@@ -17,7 +17,7 @@ namespace IntegrationTests.Controllers
         private readonly ApplicationFactory _factory;
         private readonly IServiceProvider _serviceProvider;
         
-        private const string City = "Porto Nacionalllll";
+        private const string City = "Porto Nacional";
         private const string State = "Tocantins";
         private const string Country = "Brazil";
         private const string ZipCode = "77500-000";
@@ -29,6 +29,7 @@ namespace IntegrationTests.Controllers
             _factory = factory;
             _serviceProvider = new ServiceCollection()
                 .AddTestDatabase(_factory.DatabasePath)
+                .AddSingleton(sp => new JsonSerializerOptions {PropertyNameCaseInsensitive = true})
                 .BuildServiceProvider();
         }
 
@@ -77,7 +78,7 @@ namespace IntegrationTests.Controllers
             result.EnsureSuccessStatusCode();
 
             var serializedResult = await result.Content.ReadAsStringAsync();
-            var deserializedResult = JsonSerializer.Deserialize<Address>(serializedResult);
+            var deserializedResult = JsonSerializer.Deserialize<Address>(serializedResult, scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
             
             Assert.NotNull(deserializedResult);
             Assert.Equal(City, deserializedResult.City);

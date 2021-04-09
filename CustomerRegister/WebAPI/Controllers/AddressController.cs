@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Services.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using WebAPI.Controllers.Base;
@@ -54,6 +57,32 @@ namespace WebAPI.Controllers
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {id = successResult.Result}, null);
             return BadRequest();
+        }
+
+        /// <summary>
+        /// Adds an address
+        /// </summary>
+        /// <param name="currentPage">Specifies the current page (starting with 1)</param>
+        /// <param name="perPage">The number of entries in each page</param>
+        /// <response code="200">Returns a list of addresses</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpGet]
+        public async Task<ActionResult<PaginationResult<AddressListItem>>> List(int currentPage, int perPage)
+        {
+            var result = await _addressService.ListAsync(new PaginationData
+            {
+                CurrentPage = currentPage,
+                PerPage = perPage
+            });
+            if (result is not SuccessResult<PaginationResult<Address>> successResult) return FailResult(result);
+
+            return new PaginationResult<AddressListItem>
+            {
+                Elements = successResult.Result.Elements.Select(x => new AddressListItem(x)),
+                Pagination = successResult.Result.Pagination,
+                Total = successResult.Result.Total
+            };
         }
     }
 }

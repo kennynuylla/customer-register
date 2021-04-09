@@ -50,8 +50,9 @@ namespace WebAPI
 
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
-                c.OperationFilter<AddResponseHeadersFilter>();
+                c.IncludeXmlComments(xmlPath); //Builds swagger from .NET's generated XMLs
+                
+                c.OperationFilter<AddResponseHeadersFilter>(); //Adds response headers descriptions through [SwaggerResponseHeader]
             });
             services
                 .AddUnitOfWork()
@@ -75,7 +76,11 @@ namespace WebAPI
             }
 
             app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPI v1"));
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPI v1");
+                c.DefaultModelsExpandDepth(-1); //Hides models templates
+            });
             
             app.UseRouting();
             

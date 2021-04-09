@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Database;
+using Database.UnitOfWork.Interfaces;
 using Domain.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Services.DataStructures.Structs;
 using WebAPI.Models.Address;
 using Xunit;
 
@@ -87,6 +90,32 @@ namespace IntegrationTests.Controllers
             Assert.Equal(ZipCode, deserializedResult.ZipCode);
             Assert.Equal(State, deserializedResult.State);
             Assert.Equal(Number, deserializedResult.Number);
+        }
+
+        [Theory]
+        [InlineData(3, 10)]
+        [InlineData(15, 8)]
+        [InlineData(10, 10)]
+        public async Task ListShouldReturnAListOfEntries(int total, int perPage)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = _factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress());
+            await context.SaveChangesAsync();
+
+            var result = await sut.GetAsync($"Address/List?currentPage=1&perPage={perPage}");
+            result.EnsureSuccessStatusCode();
+            var serializedResult = await result.Content.ReadAsStringAsync();
+            var deserializedResult = JsonSerializer.Deserialize<PaginationResult<AddressListItem>>(serializedResult,
+                scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
+            
+            Assert.NotNull(deserializedResult);
+            Assert.NotEmpty(deserializedResult.Elements);
+            Assert.Equal(Math.Min(total, perPage), deserializedResult.Elements.Count());
+            Assert.Equal(total, deserializedResult.Total);
+            
         }
 
         private Address GetDummyAddress() => new Address

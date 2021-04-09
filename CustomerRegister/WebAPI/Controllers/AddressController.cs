@@ -45,6 +45,7 @@ namespace WebAPI.Controllers
         /// <response code="400" >Bad Request</response>
         /// <response code="500">An error occurred</response>
         [HttpPost]
+        [SwaggerResponseHeader(201, "Location", "string", "The new address URI.")]
         public async Task<ActionResult> Add(SaveAddressModel model)
         {
             var address = model.GetAddress();

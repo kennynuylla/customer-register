@@ -62,7 +62,7 @@ namespace WebAPI
 
         protected virtual void AddDatabase(IServiceCollection services)
         {
-            services.AddDatabase(Configuration.GetConnectionString("development"));
+            services.AddDatabase(Configuration.GetConnectionString("database"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

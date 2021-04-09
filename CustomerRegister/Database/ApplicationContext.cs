@@ -3,6 +3,7 @@ using Database.Configurations;
 using Domain.Models;
 using Domain.Models.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Database
 {
@@ -24,7 +25,16 @@ namespace Database
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (optionsBuilder.IsConfigured) return;
-            optionsBuilder.UseSqlServer("Server=127.0.0.1,1450;Database=ilia;User Id=SA;Password=Develop123456*;");
+            
+            var assemblyPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
+            var pathWithoutFilePrefix = assemblyPath.Substring(6);
+
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(pathWithoutFilePrefix)
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            optionsBuilder.UseSqlServer(configuration.GetConnectionString("database"));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

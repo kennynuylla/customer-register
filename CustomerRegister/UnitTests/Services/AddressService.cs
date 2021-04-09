@@ -7,6 +7,7 @@ using Domain.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Services;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Services.Interfaces;
 using UnitTests.Base;
 using Xunit;
@@ -16,7 +17,7 @@ namespace UnitTests.Services
     public class AddressService : DatabaseTestsBase
     {
         private readonly IServiceProvider _serviceProvider;
-
+        
         public AddressService()
         {
             _serviceProvider = new ServiceCollection()
@@ -26,6 +27,27 @@ namespace UnitTests.Services
                 .AddRepositories()
                 .AddServices()
                 .BuildServiceProvider();
+        }
+        
+        private static Address GetDummyAddress()
+        {
+            return new Address
+            {
+                City = "Porto Nacional",
+                Country = "Brazil",
+                Number = 300,
+                State = "Tocantins",
+                Street = "Test",
+                ZipCode = "77500-000"
+            };
+        }
+
+        private static Address GetDummyAddress(Guid uuid)
+        {
+            var address = GetDummyAddress();
+            address.Uuid = uuid;
+
+            return address;
         }
 
         [Fact]
@@ -65,8 +87,7 @@ namespace UnitTests.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
-            var address = GetDummyAddress();
-            address.Uuid = uuid;
+            var address = GetDummyAddress(uuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
 
@@ -76,17 +97,28 @@ namespace UnitTests.Services
             Assert.NotNull(success.Result);
         }
 
-        private static Address GetDummyAddress()
+        [Fact]
+        public async Task ListAsyncShouldReturnAListOfAddresses()
         {
-            return new Address
+            const int total = 8;
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress(Guid.NewGuid()));
+            await context.SaveChangesAsync();
+
+            var result = await sut.ListAsync(new PaginationData
             {
-                City = "Porto Nacional",
-                Country = "Brazil",
-                Number = 300,
-                State = "Tocantins",
-                Street = "Test",
-                ZipCode = "77500-000"
-            };
+                CurrentPage = 1,
+                PerPage = 10
+            });
+            var successResult = (SuccessResult<PaginationResult<Address>>) result;
+            var pagination = successResult.Result;
+            
+            Assert.NotEmpty(pagination.Elements);
+            Assert.Equal(total, pagination.Total);
         }
+
     }
 }

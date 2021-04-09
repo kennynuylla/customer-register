@@ -4,6 +4,7 @@ using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
 using Services.DataStructures.Interfaces;
+using Services.DataStructures.Structs;
 using Services.Repositories;
 using Services.Services.Interfaces;
 
@@ -18,6 +19,20 @@ namespace Services.Services
         {
             _addressRepository = addressRepository;
             _logger = logger;
+        }
+
+        public async Task<IServiceResult> ListAsync(PaginationData pagination)
+        {
+            try
+            {
+                var paginationResult = await _addressRepository.ListAsync(pagination);
+                return new SuccessResult<PaginationResult<Address>>(paginationResult);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while listing addresses", pagination);
+                return new FailResult();
+            }
         }
 
         public async Task<IServiceResult> DetailAsync(Guid uuid)

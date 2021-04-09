@@ -7,5 +7,6 @@ namespace Services.DataStructures.Structs
     {
         public PaginationData Pagination { get; set; }
         public IEnumerable<T> Elements { get; set; }
+        public int Total { get; set; }
     }
 }

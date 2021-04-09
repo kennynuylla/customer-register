@@ -8,7 +8,7 @@ namespace Services.Repositories
 {
     public interface IRepositoryBase<TModel> where TModel:IUuidModel
     {
-        Task<PaginationResult<TModel>> List(PaginationData pagination, params Func<TModel, object>[] includes);
+        Task<PaginationResult<TModel>> ListAsync(PaginationData pagination, params Expression<Func<TModel, object>>[] includes);
         Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes);
         Guid Save(TModel model);
         void Delete(Guid uuid);

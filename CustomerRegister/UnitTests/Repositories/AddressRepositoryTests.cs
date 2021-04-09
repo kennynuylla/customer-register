@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Database;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Services.DataStructures.Structs;
 using Services.Repositories;
 using UnitTests.Base;
 using Xunit;
@@ -14,6 +16,13 @@ namespace UnitTests.Repositories
     public class AddressRepositoryTests : DatabaseTestsBase
     {
         private readonly IServiceProvider _serviceProvider;
+        
+        const string City = "Palmas";
+        const string ZipCode = "77001-004";
+        const string Country = "Brazil";
+        const string State = "Tocantins";
+        const string Street = "Non Existing Street";
+        const int Number = 70;
 
         public AddressRepositoryTests()
         {
@@ -24,6 +33,37 @@ namespace UnitTests.Repositories
                 .AddRepositories()
                 .BuildServiceProvider();
         }
+        
+        private static Address GetDummyAddress()
+        {
+            return new Address
+            {
+                City = City,
+                Country = Country,
+                State = State,
+                ZipCode = ZipCode,
+                Street = Street,
+                Number = Number
+            };
+        }
+
+        private static Address GetDummyAddress(Guid uuid)
+        {
+            var address = GetDummyAddress();
+            address.Uuid = uuid;
+
+            return address;
+        }
+        
+        private static void AssertDummyAddress(Address address)
+        {
+            Assert.Equal(City, address.City);
+            Assert.Equal(Country, address.Country);
+            Assert.Equal(State, address.State);
+            Assert.Equal(ZipCode, address.ZipCode);
+            Assert.Equal(Street, address.Street);
+            Assert.Equal(Number, address.Number);
+        }
 
         [Fact]
         public async Task SaveShouldAddANewAddressGiverNonExistingEntry()
@@ -32,34 +72,14 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            const string city = "Palmas";
-            const string zipCode = "77001-004";
-            const string country = "Brazil";
-            const string state = "Tocantins";
-            const string street = "Non Existing Street";
-            const int number = 70;
-
-            var address = new Address
-            {
-                City = city,
-                Country = country,
-                State = state,
-                ZipCode = zipCode,
-                Street = street,
-                Number = number
-            };
+            
+            var address = GetDummyAddress();
             sut.Save(address);
             var savedChanges = await unitOfWork.SaveChangesAsync();
             var savedAddress = await context.Addresses.FirstAsync();
 
             Assert.True(savedChanges);
-            Assert.Equal(city, savedAddress.City);
-            Assert.Equal(country, savedAddress.Country);
-            Assert.Equal(state, savedAddress.State);
-            Assert.Equal(zipCode, savedAddress.ZipCode);
-            Assert.Equal(street, savedAddress.Street);
-            Assert.Equal(number, savedAddress.Number);
+            AssertDummyAddress(savedAddress);
             Assert.NotEqual(default, savedAddress.Uuid);
         }
 
@@ -69,37 +89,81 @@ namespace UnitTests.Repositories
             using var scope = _serviceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            const string city = "Get Test";
-            const string state = "Tocantins";
-            const string country = "Brazil";
-            const string zipCode = "12345-678";
-            const string street = "Test";
-            const int number = 8;
+            
             var uuid = Guid.NewGuid();
-            var addressToRetrieve = new Address
-            {
-                City = city,
-                Country = country,
-                Number = number,
-                State = state,
-                Street = street,
-                ZipCode = zipCode,
-                Uuid = uuid
-            };
+            var addressToRetrieve = GetDummyAddress(uuid);
 
             await context.Addresses.AddAsync(addressToRetrieve);
             await context.SaveChangesAsync();
             var retrievedAddress = await sut.GetAsync(uuid);
             
             Assert.NotNull(retrievedAddress);
-            Assert.Equal(city, retrievedAddress.City);
-            Assert.Equal(country, retrievedAddress.Country);
-            Assert.Equal(state, retrievedAddress.State);
-            Assert.Equal(zipCode, retrievedAddress.ZipCode);
-            Assert.Equal(street, retrievedAddress.Street);
-            Assert.Equal(number, retrievedAddress.Number);
+            AssertDummyAddress(retrievedAddress);
             Assert.Equal(uuid, retrievedAddress.Uuid);
+        }
+        
+        [Theory]
+        [InlineData(3, 10)]
+        [InlineData(15,10)]
+        public async Task ListAsyncShouldReturnAPaginationWithEntries(int total, int perPage)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress(Guid.NewGuid()));
+            await context.SaveChangesAsync();
+
+            var pagination = new PaginationData
+            {
+                CurrentPage = 1,
+                PerPage = perPage
+            };
+            var result = await sut.ListAsync(pagination);
+            var addresses = result.Elements;
+
+            var limit = total < perPage ? total : perPage ;
+            Assert.Equal( limit, addresses.Count());
+            for (var i = 0; i < limit; i++)
+            {
+                var currentAddress = addresses.ElementAt(i);
+                AssertDummyAddress(currentAddress);
+                Assert.NotEqual(default, currentAddress.Uuid);
+            }
+            Assert.Equal(total, result.Total);
+        }
+
+        [Fact]
+        public async Task ListAsyncShouldReturn5EntriesGivenSecondPageOf15Entries()
+        {
+            const int total = 15;
+            const int page = 2;
+            const int perPage = 10;
+            const int expectedSecondPage = 5;
+            
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress(Guid.NewGuid()));
+            await context.SaveChangesAsync();
+
+            var pagination = new PaginationData
+            {
+                CurrentPage = page,
+                PerPage = perPage
+            };
+            var result = await sut.ListAsync(pagination);
+            var addresses = result.Elements;
+            
+            Assert.Equal( expectedSecondPage, addresses.Count());
+            for (var i = 0; i < expectedSecondPage; i++)
+            {
+                var currentAddress = addresses.ElementAt(i);
+                AssertDummyAddress(currentAddress);
+                Assert.NotEqual(default, currentAddress.Uuid);
+            }
+            Assert.Equal(total, result.Total);
         }
     }
 }

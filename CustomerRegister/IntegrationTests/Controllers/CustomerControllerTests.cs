@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -123,6 +124,21 @@ namespace IntegrationTests.Controllers
             Assert.Equal(customer.Id, savedCustomer.Id);
             Assert.Equal(editRequest.Email, savedCustomer.Email);
             Assert.Equal(editRequest.Name, savedCustomer.Name);
+        }
+
+        [Fact]
+        public async Task DeleteShouldSeIsActiveToFalse()
+        {
+               using var scope = ServiceProvider.CreateScope();
+               var sut = Factory.CreateClient();
+               var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+               var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+
+               var result = await sut.DeleteAsync($"Customer/Delete/{customer.Uuid}");
+               result.EnsureSuccessStatusCode();
+               var deletedCustomer = await context.Customers.FirstAsync();
+               
+               Assert.False(deletedCustomer.IsActive);
         }
     }
 }

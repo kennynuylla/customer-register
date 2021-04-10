@@ -1,9 +1,12 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using CommonFixtures;
 using Database;
+using Domain.Models;
 using IntegrationTests.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +19,17 @@ namespace IntegrationTests.Controllers
     {
         public PhoneControllerTests(ApplicationFactory factory) : base(factory)
         {
+        }
+        
+        private static void AssertPhone(Phone phoneToAssert,Customer customer, Phone phoneWithExpectedData)
+        {
+            Assert.NotNull(phoneToAssert);
+            Assert.Equal(phoneWithExpectedData.Number, phoneToAssert.Number);
+            Assert.Equal(phoneWithExpectedData.AreaCode, phoneToAssert.AreaCode);
+            Assert.Equal(customer.Uuid, phoneToAssert.Customer.Uuid);
+            Assert.Equal(customer.Id, phoneToAssert.Customer.Id);
+            Assert.Equal(customer.Name, phoneToAssert.Customer.Name);
+            Assert.Equal(customer.Email, phoneToAssert.Customer.Email);
         }
 
         [Fact]
@@ -42,5 +56,34 @@ namespace IntegrationTests.Controllers
             Assert.Equal(request.AreaCode, savedPhone.AreaCode);
             Assert.Equal(request.CustomerUuid, savedPhone.Customer.Uuid);
         }
+
+        [Fact]
+        public async Task GetShouldReturn404GivenNonExistingPhone()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+
+            var result = await sut.GetAsync($"Phone/Get/{Guid.NewGuid()}");
+            
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetShouldReturnDetailsGivenExistingPhone()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var (customer, phone) = await SeedDatabaseFixture.AddDummyCustomerAndPhoneAsync(context);
+
+            var result = await sut.GetAsync($"Phone/Get/{phone.Uuid}");
+            result.EnsureSuccessStatusCode();
+            var serializedResult = await result.Content.ReadAsStringAsync();
+            var deserializedResult = JsonSerializer.Deserialize<Phone>(serializedResult, scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
+            
+            AssertPhone(deserializedResult, customer, phone);
+        }
+
+
     }
 }

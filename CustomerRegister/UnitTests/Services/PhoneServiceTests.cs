@@ -56,6 +56,18 @@ namespace UnitTests.Services
             var result = await sut.SaveAsync(editedPhone, customer.Uuid);
             Assert.IsType<NotFoundResult>(result);
         }
+        
+        private static void AssertPhone(Phone phoneFromContext, Customer customer, Phone phone)
+        {
+            Assert.NotEqual(default, phoneFromContext.Id);
+            Assert.NotEqual(default, phoneFromContext.Uuid);
+            Assert.Equal(customer.Id, phoneFromContext.CustomerId);
+            Assert.Equal(customer.Uuid, phoneFromContext.Customer.Uuid);
+            Assert.Equal(customer.Name, phoneFromContext.Customer.Name);
+            Assert.Equal(customer.Email, phoneFromContext.Customer.Email);
+            Assert.Equal(phone.Number, phoneFromContext.Number);
+            Assert.Equal(phoneFromContext.AreaCode, phoneFromContext.AreaCode);
+        }
 
         [Fact]
         public async Task SaveAsyncShouldAddNewPhoneGivenNonExistingEntry()
@@ -76,14 +88,7 @@ namespace UnitTests.Services
             var savedPhone = await context.Phones.Include(x => x.Customer).FirstAsync();
             
             Assert.IsType<SuccessResult<Guid>>(result);
-            Assert.NotEqual(default, savedPhone.Id);
-            Assert.NotEqual(default, savedPhone.Uuid);
-            Assert.Equal(customer.Id, savedPhone.CustomerId);
-            Assert.Equal(customer.Uuid, savedPhone.Customer.Uuid);
-            Assert.Equal(customer.Name, savedPhone.Customer.Name);
-            Assert.Equal(customer.Email, savedPhone.Customer.Email);
-            Assert.Equal(PhoneFixture.Number, savedPhone.Number);
-            Assert.Equal(PhoneFixture.AreaCode, savedPhone.AreaCode);
+            AssertPhone(savedPhone, customer, phone);
         }
 
         [Fact]
@@ -108,14 +113,33 @@ namespace UnitTests.Services
             var savedPhone = await context.Phones.Include(x => x.Customer).FirstAsync();
 
             Assert.IsType<SuccessResult<Guid>>(result);
-            Assert.NotEqual(default, savedPhone.Id);
-            Assert.NotEqual(default, savedPhone.Uuid);
-            Assert.Equal(customer.Id, savedPhone.CustomerId);
-            Assert.Equal(customer.Uuid, savedPhone.Customer.Uuid);
-            Assert.Equal(customer.Name, savedPhone.Customer.Name);
-            Assert.Equal(customer.Email, savedPhone.Customer.Email);
-            Assert.Equal(editPhone.Number, savedPhone.Number);
-            Assert.Equal(savedPhone.AreaCode, savedPhone.AreaCode);
+            AssertPhone(savedPhone, customer, editPhone);
+        }
+        
+        [Fact]
+        public async Task DetailAsyncShouldReturnTheDetailsOfAnEntry()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var (customer, phone) = await SeedDatabaseFixture.AddDummyCustomerAndPhoneAsync(context);
+
+            var result = await sut.DetailAsync(phone.Uuid);
+            var successResult = (SuccessResult<Phone>) result;
+            var detailedPhone = successResult.Result;
+            
+            AssertPhone(detailedPhone, customer, phone);
+        }
+
+        [Fact]
+        public async Task DetailAsyncShouldReturnNotFoundResultGivenNonExitingEntry()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IPhoneService>();
+            
+            var result = await sut.DetailAsync(Guid.NewGuid());
+
+            Assert.IsType<NotFoundResult>(result);
         }
     }
 }

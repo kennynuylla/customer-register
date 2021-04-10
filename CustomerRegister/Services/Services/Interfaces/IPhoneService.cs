@@ -8,5 +8,6 @@ namespace Services.Services.Interfaces
     public interface IPhoneService
     {
         Task<IServiceResult> SaveAsync(Phone phone, Guid customerUuid);
+        Task<IServiceResult> DetailAsync(Guid uuid);
     }
 }

@@ -4,6 +4,7 @@ namespace WebAPI.Models.LocalPhone
 {
     public class LocalPhoneListItemModel
     {
+        public Guid Uuid { get; set; }
         public string Number { get; set; }
         public string AreaCode { get; set; }
         public Guid AddressUuid { get; set; }
@@ -16,6 +17,7 @@ namespace WebAPI.Models.LocalPhone
 
         public LocalPhoneListItemModel(Domain.Models.LocalPhone phone)
         {
+            Uuid = phone.Uuid;
             Number = phone.Number;
             AreaCode = phone.AreaCode;
             AddressUuid = phone.PhoneAddress.Uuid;

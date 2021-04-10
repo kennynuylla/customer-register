@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -8,8 +7,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using CommonFixtures;
 using Database;
-using Database.UnitOfWork.Interfaces;
 using Domain.Models;
+using IntegrationTests.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Services.DataStructures.Structs;
@@ -18,24 +17,17 @@ using Xunit;
 
 namespace IntegrationTests.Controllers
 {
-    public class AddressControllerTests : IClassFixture<ApplicationFactory>, IDisposable
+    public class AddressControllerTests : ControllerTestsBase
     {
-        private readonly ApplicationFactory _factory;
-        private readonly IServiceProvider _serviceProvider;
         
-        public AddressControllerTests(ApplicationFactory factory)
+        public AddressControllerTests(ApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
-            _serviceProvider = new ServiceCollection()
-                .AddTestDatabase(_factory.DatabasePath)
-                .AddSingleton(sp => new JsonSerializerOptions {PropertyNameCaseInsensitive = true})
-                .BuildServiceProvider();
         }
-
+        
         [Fact]
         public async Task AddShouldAddANewAddress()
         {
-            var sut = _factory.CreateClient();
+            var sut = Factory.CreateClient();
             var address = new AddAddressModel
             {
                 City = AddressFixture.City,
@@ -52,7 +44,7 @@ namespace IntegrationTests.Controllers
             var result = await sut.PostAsync("Address/Add", contentJson);
             result.EnsureSuccessStatusCode();
 
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             await using var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
             Assert.NotEmpty(context.Addresses);
@@ -62,8 +54,8 @@ namespace IntegrationTests.Controllers
         [Fact]
         public async Task GetShouldReturnExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var sut = _factory.CreateClient();
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
@@ -90,8 +82,8 @@ namespace IntegrationTests.Controllers
         [Fact]
         public async Task GetShouldReturn404GivenNonExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var sut = _factory.CreateClient();
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
             var result = await sut.GetAsync($"Address/Get/{Guid.NewGuid()}");
@@ -105,8 +97,8 @@ namespace IntegrationTests.Controllers
         [InlineData(10, 10)]
         public async Task ListShouldReturnAListOfEntries(int total, int perPage)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var sut = _factory.CreateClient();
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress());
@@ -128,8 +120,8 @@ namespace IntegrationTests.Controllers
         [Fact]
         public async Task UpdateShouldUpdateAnExistingRecord()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var sut = _factory.CreateClient();
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
             var uuid = Guid.NewGuid();
@@ -177,8 +169,8 @@ namespace IntegrationTests.Controllers
         [Fact]
         public async Task DeleteShouldSetIsActiveToFalse()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var sut = _factory.CreateClient();
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
@@ -191,11 +183,6 @@ namespace IntegrationTests.Controllers
 
             var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
             Assert.False(deletedAddress.IsActive);
-        }
-
-        public void Dispose()
-        {
-            _factory?.Dispose();
         }
     }
 }

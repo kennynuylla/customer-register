@@ -65,6 +65,7 @@ namespace UnitTests.Services
             };
 
             var result = sut.Save(editedAddress);
+            await unitOfWork.SaveChangesAsync();
             var uniqueAddress = await context.Addresses.FirstAsync();
             
             Assert.True(result.IsSuccessful);

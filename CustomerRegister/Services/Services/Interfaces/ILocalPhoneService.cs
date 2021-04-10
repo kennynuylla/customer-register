@@ -7,7 +7,7 @@ namespace Services.Services.Interfaces
 {
     public interface ILocalPhoneService
     {
-        IServiceResult SaveAsync(LocalPhone phone, Guid addressUuid);
+        Task<IServiceResult> SaveAsync(LocalPhone phone, Guid addressUuid);
         Task<IServiceResult> GetAsync(Guid uuid);
     }
 }

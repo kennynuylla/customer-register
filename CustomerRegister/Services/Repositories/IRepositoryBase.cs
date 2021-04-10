@@ -10,7 +10,8 @@ namespace Services.Repositories
     {
         Task<PaginationResult<TModel>> ListAsync(PaginationData pagination, params Expression<Func<TModel, object>>[] includes);
         Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes);
-        Guid Save(TModel model);
+        Task<Guid> SaveAsync(TModel model);
         Task DeleteAsync(Guid uuid);
+        Task<bool> CheckExistenceAsync(Guid uuid);
     }
 }

@@ -29,7 +29,7 @@ namespace Services.Services
             {
                 var address = await _addressRepository.GetAsync(addressUuid);
                 phone.PhoneAddressId = address.Id;
-                var phoneUuid = _localPhoneRepository.Save(phone);
+                var phoneUuid = await _localPhoneRepository.SaveAsync(phone);
                 return new SuccessResult<Guid>(phoneUuid);
             }
             catch (Exception e)

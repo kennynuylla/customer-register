@@ -35,7 +35,7 @@ namespace UnitTests.Repositories
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var address = AddressFixture.GetDummyAddress();
-            sut.Save(address);
+            await sut.SaveAsync(address);
             var savedChanges = await unitOfWork.SaveChangesAsync();
             var savedAddress = await context.Addresses.FirstAsync();
 
@@ -202,7 +202,7 @@ namespace UnitTests.Repositories
                 Id = address.Id
             };
 
-            sut.Save(editedAddress);
+            await sut.SaveAsync(editedAddress);
             await unitOfWork.SaveChangesAsync();
 
             var insertedAddress = await context.Addresses.FirstAsync();

@@ -28,7 +28,7 @@ namespace UnitTests.Services
 
             var address = AddressFixture.GetDummyAddress();
 
-            var result = sut.Save(address);
+            var result = await sut.SaveAsync(address);
             await unitOfWork.SaveChangesAsync();
 
             Assert.True(result.IsSuccessful);
@@ -64,13 +64,44 @@ namespace UnitTests.Services
                 State = address.State
             };
 
-            var result = sut.Save(editedAddress);
+            var result = await sut.SaveAsync(editedAddress);
             await unitOfWork.SaveChangesAsync();
             var uniqueAddress = await context.Addresses.FirstAsync();
             
             Assert.True(result.IsSuccessful);
             Assert.Equal(edited, uniqueAddress.Country);
             Assert.Equal(uuid, uniqueAddress.Uuid);
+        }
+
+        [Fact]
+        public async Task SaveShouldReturnNotFoundResultGivenNonExistingUuid()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var uuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(uuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            const string edited = "Edited";
+            var editedAddress = new Address
+            {
+                City = address.City,
+                Country = edited,
+                Id = address.Id,
+                Number = address.Number,
+                Street = address.Street,
+                Uuid = Guid.NewGuid(),
+                ZipCode = address.ZipCode,
+                State = address.State
+            };
+
+            var result = await sut.SaveAsync(editedAddress);
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]

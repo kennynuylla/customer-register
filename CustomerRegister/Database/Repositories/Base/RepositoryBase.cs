@@ -30,12 +30,12 @@ namespace Database.Repositories.Base
                 .AsNoTracking()
                 .Where(x => x.IsActive);
 
-            var query = filteredQuery
+            var query = AggregateIncludes(filteredQuery, includes)
                 .Skip((pagination.CurrentPage - 1) * pagination.PerPage)
-                .Take(pagination.PerPage);
-
-            query = AggregateIncludes(query, includes);
-            var list = await query.OrderBy(x => x.Id).ToListAsync();
+                .Take(pagination.PerPage)
+                .OrderBy(x => x.Id);
+            
+            var list = await query.ToListAsync();
 
             return new PaginationResult<TModel>
             {
@@ -61,14 +61,18 @@ namespace Database.Repositories.Base
             return query;
         }
 
-        public Guid Save(TModel model)
+        public async Task<Guid> SaveAsync(TModel model)
         {
             if (model.Uuid == default)
             {
                 model.Uuid = Guid.NewGuid();
-                Set.Add(model);
+                await Set.AddAsync(model);
             }
-            else Context.Entry(model).State = EntityState.Modified;
+            else
+            {
+                if(!await CheckExistenceAsync(model.Uuid)) return Guid.Empty;
+                Context.Entry(model).State = EntityState.Modified;
+            }
 
             return model.Uuid;
         }
@@ -78,6 +82,12 @@ namespace Database.Repositories.Base
             var addressToDeleteTracked = await Set.FirstOrDefaultAsync(x => x.Uuid == uuid && x.IsActive);
             if(addressToDeleteTracked is not null) addressToDeleteTracked.IsActive = false;
             else Logger.LogWarning("Repository: You are trying to delete a non existing model of type {0} with Uuid={1}. Take care.", typeof(TModel), uuid);
+        }
+
+        public async Task<bool> CheckExistenceAsync(Guid uuid)
+        {
+            var total = await Set.Where(x => x.Uuid == uuid && x.IsActive).CountAsync();
+            return total == 1;
         }
     }
 }

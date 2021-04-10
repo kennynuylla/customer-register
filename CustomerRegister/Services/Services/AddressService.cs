@@ -51,11 +51,12 @@ namespace Services.Services
             }
         }
 
-        public IServiceResult Save(Address address)
+        public async Task<IServiceResult> SaveAsync(Address address)
         {
             try
             {
-                var uuid = _addressRepository.Save(address);
+                var uuid = await _addressRepository.SaveAsync(address);
+                if (uuid == default) return new NotFoundResult();
                 return new SuccessResult<Guid>(uuid);
             }
             catch (Exception e)

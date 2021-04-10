@@ -53,7 +53,7 @@ namespace WebAPI.Controllers
         public async Task<ActionResult> Add(AddAddressModel model)
         {
             var address = model.GetAddress();
-            var result =  _addressService.Save(address);
+            var result =  await _addressService.SaveAsync(address);
             
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {uuid = successResult.Result}, null);
@@ -96,7 +96,7 @@ namespace WebAPI.Controllers
         public async Task<ActionResult> Update(Guid uuid, UpdateAddressModel model)
         {
             var address = model.GetAddress(uuid);
-            var result =  _addressService.Save(address);
+            var result =  await _addressService.SaveAsync(address);
 
             if (!result.IsSuccessful) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return NoContent();

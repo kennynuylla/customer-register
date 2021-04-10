@@ -10,7 +10,7 @@ namespace CommonFixtures
         public static async Task<(Address address, LocalPhone phone)> AddDummyPhoneAndAddressAsync(ApplicationContext context)
         {
             var address = await AddDummyAddressAsync(context);
-            var phone = await AddDummyPhoneAsync(context, address);
+            var phone = await AddDummyLocalPhoneAsync(context, address);
 
             return (address, phone);
         }
@@ -27,7 +27,7 @@ namespace CommonFixtures
             return address;
         }
 
-        public static async Task<LocalPhone> AddDummyPhoneAsync(ApplicationContext context, Address address)
+        public static async Task<LocalPhone> AddDummyLocalPhoneAsync(ApplicationContext context, Address address)
         {
             var phoneUuid = Guid.NewGuid();
             var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
@@ -47,6 +47,24 @@ namespace CommonFixtures
             context.ChangeTracker.Clear();
 
             return customer;
+        }
+
+        public static async Task<(Customer customer, Phone phone)> AddDummyCustomerAndPhoneAsync(ApplicationContext context)
+        {
+            var customer = await AddDummyCustomerAsync(context);
+            var phone = await AddDummyPhoneAsync(context, customer);
+
+            return (customer, phone);
+        }
+
+        public static async Task<Phone> AddDummyPhoneAsync(ApplicationContext context, Customer customer)
+        {
+            var phone = PhoneFixture.GetDummyPhone(customer.Id, Guid.NewGuid());
+            await context.Phones.AddAsync(phone);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            return phone;
         }
     }
 }

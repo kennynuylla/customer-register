@@ -70,7 +70,7 @@ namespace Database.Repositories.Base
             }
             else
             {
-                if(!await CheckExistenceAsync(model.Uuid)) return Guid.Empty;
+                if (!await CheckExistenceAsync(model.Uuid, model.Id)) return default;
                 Context.Entry(model).State = EntityState.Modified;
             }
 
@@ -84,10 +84,7 @@ namespace Database.Repositories.Base
             else Logger.LogWarning("Repository: You are trying to delete a non existing model of type {0} with Uuid={1}. Take care.", typeof(TModel), uuid);
         }
 
-        public async Task<bool> CheckExistenceAsync(Guid uuid)
-        {
-            var total = await Set.Where(x => x.Uuid == uuid && x.IsActive).CountAsync();
-            return total == 1;
-        }
+        public async Task<bool> CheckExistenceAsync(Guid uuid) =>  await Set.AnyAsync(x => x.Uuid == uuid && x.IsActive);
+        public async Task<bool> CheckExistenceAsync(Guid uuid, int id) => await Set.AnyAsync(x => x.Uuid == uuid && x.IsActive && x.Id == id);
     }
 }

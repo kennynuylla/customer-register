@@ -83,7 +83,7 @@ namespace UnitTests.Services
             
             var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyPhoneAsync(context, address);
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyLocalPhoneAsync(context, address);
 
             var result = await sut.ListAsync(new PaginationData
             {

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Domain.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Services.Services;
 using Services.Services.Interfaces;
 
@@ -11,6 +12,7 @@ namespace Services
             serviceCollection
                 .AddScoped<IAddressService, AddressService>()
                 .AddScoped<ICustomerService, CustomerService>()
+                .AddScoped<IPhoneService, PhoneService>()
                 .AddScoped<ILocalPhoneService, LocalPhoneService>();
             
             return serviceCollection;

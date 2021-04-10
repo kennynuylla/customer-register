@@ -13,5 +13,6 @@ namespace Services.Repositories
         Task<Guid> SaveAsync(TModel model);
         Task DeleteAsync(Guid uuid);
         Task<bool> CheckExistenceAsync(Guid uuid);
+        Task<bool> CheckExistenceAsync(Guid uuid, int id);
     }
 }

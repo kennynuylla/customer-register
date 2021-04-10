@@ -10,6 +10,7 @@ using Domain.Models;
 using IntegrationTests.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Services.DataStructures.Structs;
 using WebAPI.Models.Phone;
 using Xunit;
 
@@ -82,6 +83,32 @@ namespace IntegrationTests.Controllers
             var deserializedResult = JsonSerializer.Deserialize<Phone>(serializedResult, scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
             
             AssertPhone(deserializedResult, customer, phone);
+        }
+
+        [Fact]
+        public async Task ListShouldReturnAListOfPhones()
+        {
+            const int total = 8;
+            const int perPage = 18;
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyPhoneAsync(context, customer);
+
+            var result = await sut.GetAsync($"Phone/List?currentPage=1&perPage={perPage}");
+            result.EnsureSuccessStatusCode();
+            var serializedResult = await result.Content.ReadAsStringAsync();
+            var deserializedResult = JsonSerializer.Deserialize<PaginationResult<PhoneListItemModel>>(serializedResult,
+                scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
+
+            foreach (var phone in deserializedResult.Elements)
+            {
+                Assert.NotEqual(default, phone.Uuid);
+                Assert.NotEqual(default, phone.Number);
+                Assert.NotEqual(default, phone.AreaCode);
+                Assert.NotEqual(default, phone.CustomerName);
+            }
         }
 
 

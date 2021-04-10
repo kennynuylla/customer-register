@@ -65,7 +65,7 @@ namespace WebAPI.Controllers
         /// </summary>
         /// <param name="currentPage">Specifies the current page (starting with 1)</param>
         /// <param name="perPage">The number of entries in each page</param>
-        /// <response code="200">Returns a list of addresses</response>
+        /// <response code="200">Returns a list of local phones</response>
         /// <response code="400" >Bad Request</response>
         /// <response code="500">An error occurred</response>
         [HttpGet]

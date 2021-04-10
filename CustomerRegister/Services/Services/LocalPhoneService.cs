@@ -38,9 +38,19 @@ namespace Services.Services
             }
         }
 
-        public Task<IServiceResult> GetAsync(Guid uuid)
+        public async Task<IServiceResult> DetailAsync(Guid uuid)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var phone = await _localPhoneRepository.GetAsync(uuid, x => x.PhoneAddress);
+                if (phone is null) return new NotFoundResult();
+                return new SuccessResult<LocalPhone>(phone);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while retrieving data");
+                return new FailResult();
+            }
         }
     }
 }

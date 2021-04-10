@@ -61,7 +61,7 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Adds an address
+        /// Lists the addresses
         /// </summary>
         /// <param name="currentPage">Specifies the current page (starting with 1)</param>
         /// <param name="perPage">The number of entries in each page</param>

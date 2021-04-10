@@ -10,6 +10,8 @@ using Domain.Models;
 using IntegrationTests.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Services.DataStructures.Structs;
+using Services.Services.Interfaces;
 using WebAPI.Models.LocalPhone;
 using Xunit;
 
@@ -95,6 +97,50 @@ namespace IntegrationTests.Controllers
             Assert.Equal(AddressFixture.Number, detailedAddress.Number);
             Assert.Equal(AddressFixture.State, detailedAddress.State);
             Assert.Equal(AddressFixture.Street, detailedAddress.Street);
+        }
+
+        [Fact]
+        public async Task ListShouldNotThrowExceptionsGivenEmptyDatabase()
+        {
+            var sut = Factory.CreateClient();
+            var result = await sut.GetAsync("LocalPhone/List?currentPage=1&perPage=10");
+            result.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task ListShouldReturnAListOfEntries()
+        {
+            const int total = 5;
+            const int perPage = 8;
+            
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var addressUuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(addressUuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            for (var i = 0; i < total; i++) await context.LocalPhones.AddAsync(LocalPhoneFixture.GetDummyLocalPhone(Guid.NewGuid(), address.Id));
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var result = await sut.GetAsync($"LocalPhone/List?currentPage=1&perPage={perPage}");
+            result.EnsureSuccessStatusCode();
+            var serializedResult = await result.Content.ReadAsStringAsync();
+            var list = JsonSerializer.Deserialize<PaginationResult<LocalPhoneListItemModel>>(serializedResult,
+                scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
+
+            foreach (var localPhone in list.Elements)
+            {
+                Assert.Equal(LocalPhoneFixture.Number, localPhone.Number);
+                Assert.Equal(LocalPhoneFixture.AreaCode, localPhone.AreaCode);
+                Assert.Equal(addressUuid, localPhone.AddressUuid);
+                Assert.NotEqual(default, localPhone.AddressDescription);
+            }
+
         }
     }
 }

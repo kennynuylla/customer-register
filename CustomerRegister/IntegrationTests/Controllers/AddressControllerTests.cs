@@ -114,7 +114,14 @@ namespace IntegrationTests.Controllers
             Assert.NotEmpty(deserializedResult.Elements);
             Assert.Equal(Math.Min(total, perPage), deserializedResult.Elements.Count());
             Assert.Equal(total, deserializedResult.Total);
-            
+        }
+
+        [Fact]
+        public async Task ListShouldNotThrowExceptionsGivenEmptyDatabase()
+        {
+            var sut = Factory.CreateClient();
+            var result = await sut.GetAsync("Address/List?currentPage=1&perPage=10");
+            result.EnsureSuccessStatusCode();
         }
 
         [Fact]

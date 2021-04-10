@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Services.Interfaces;
 using Swashbuckle.AspNetCore.Filters;
 using WebAPI.Controllers.Base;
@@ -56,6 +58,33 @@ namespace WebAPI.Controllers
             var result = await _localPhoneService.DetailAsync(uuid);
             if (result is SuccessResult<LocalPhone> successResult) return successResult.Result;
             return FailResult(result);
+        }
+
+        /// <summary>
+        /// Lists the addresses
+        /// </summary>
+        /// <param name="currentPage">Specifies the current page (starting with 1)</param>
+        /// <param name="perPage">The number of entries in each page</param>
+        /// <response code="200">Returns a list of addresses</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpGet]
+        public async Task<ActionResult<PaginationResult<LocalPhoneListItemModel>>> List(int currentPage, int perPage)
+        {
+            var result = await _localPhoneService.ListAsync(new PaginationData
+            {
+                CurrentPage = currentPage,
+                PerPage = perPage
+            });
+            if (result is not SuccessResult<PaginationResult<LocalPhone>> successResult) return FailResult(result);
+            var listItems = successResult.Result.Elements.Select(x => new LocalPhoneListItemModel(x));
+
+            return new PaginationResult<LocalPhoneListItemModel>
+            {
+                Elements = listItems,
+                Pagination = successResult.Result.Pagination,
+                Total = successResult.Result.Total
+            };
         }
         
     }

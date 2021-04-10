@@ -35,8 +35,7 @@ namespace Database.Repositories.Base
                 .Take(pagination.PerPage);
 
             query = AggregateIncludes(query, includes);
-            query = query.OrderBy(x => x.Id);
-            var list = await query.ToListAsync();
+            var list = await query.OrderBy(x => x.Id).ToListAsync();
 
             return new PaginationResult<TModel>
             {

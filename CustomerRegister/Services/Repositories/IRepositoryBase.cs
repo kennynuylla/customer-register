@@ -6,7 +6,7 @@ using Services.DataStructures.Structs;
 
 namespace Services.Repositories
 {
-    public interface IRepositoryBase<TModel> where TModel:IUuidModel
+    public interface IRepositoryBase<TModel> where TModel:IBaseModel
     {
         Task<PaginationResult<TModel>> ListAsync(PaginationData pagination, params Expression<Func<TModel, object>>[] includes);
         Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes);

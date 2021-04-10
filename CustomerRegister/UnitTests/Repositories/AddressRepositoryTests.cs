@@ -101,6 +101,24 @@ namespace UnitTests.Repositories
             AssertDummyAddress(retrievedAddress);
             Assert.Equal(uuid, retrievedAddress.Uuid);
         }
+
+        [Fact]
+        public async Task GetShouldReturnNullGivenInactiveRecord()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var uuid = Guid.NewGuid();
+            var addressToRetrieve = GetDummyAddress(uuid);
+            addressToRetrieve.IsActive = false;
+
+            await context.Addresses.AddAsync(addressToRetrieve);
+            await context.SaveChangesAsync();
+            var retrievedAddress = await sut.GetAsync(uuid);
+            
+            Assert.Null(retrievedAddress);
+        }
         
         [Theory]
         [InlineData(3, 10)]
@@ -165,5 +183,30 @@ namespace UnitTests.Repositories
             }
             Assert.Equal(total, result.Total);
         }
+
+        [Fact]
+        public async Task ListAsyncShouldSkipInactiveItems()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var address = GetDummyAddress(Guid.NewGuid());
+            address.IsActive = false;
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+
+            var pagination = new PaginationData
+            {
+                CurrentPage = 1,
+                PerPage = 10
+            };
+            var result = await sut.ListAsync(pagination);
+            var addresses = result.Elements;
+            
+            Assert.Empty(result.Elements);
+            Assert.Equal(0, result.Total);
+        }
+        
     }
 }

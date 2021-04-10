@@ -10,7 +10,7 @@ using Services.Repositories;
 
 namespace Database.Repositories.Base
 {
-    internal abstract class RepositoryBase<TModel> : IRepositoryBase<TModel> where TModel: class, IUuidModel
+    internal abstract class RepositoryBase<TModel> : IRepositoryBase<TModel> where TModel : class, IBaseModel
     {
         protected ApplicationContext _context;
         protected DbSet<TModel> Set;
@@ -20,10 +20,13 @@ namespace Database.Repositories.Base
             _context = context;
             Set = context.Set<TModel>();
         }
-        
+
         public async Task<PaginationResult<TModel>> ListAsync(PaginationData pagination, params Expression<Func<TModel, object>>[] includes)
         {
-            var query = Set
+            var filteredQuery = Set
+                .Where(x => x.IsActive);
+            
+            var query = filteredQuery
                 .Skip((pagination.CurrentPage - 1) * pagination.PerPage)
                 .Take(pagination.PerPage);
 
@@ -34,18 +37,18 @@ namespace Database.Repositories.Base
             {
                 Elements = list,
                 Pagination = pagination,
-                Total = await Set.CountAsync()
+                Total = await filteredQuery.CountAsync()
             };
         }
 
         public async Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes)
         {
-            var query = Set.Where(x => x.Uuid == uuid);
+            var query = Set.Where(x => x.Uuid == uuid && x.IsActive);
             query = AggregateIncludes(query, includes);
             return await query.FirstOrDefaultAsync();
         }
 
-        private static IQueryable<TModel> AggregateIncludes( IQueryable<TModel> query, IEnumerable<Expression<Func<TModel, object>>> includes)
+        private static IQueryable<TModel> AggregateIncludes(IQueryable<TModel> query, IEnumerable<Expression<Func<TModel, object>>> includes)
         {
             query = includes.Aggregate(query, (query, include) => query.Include(include));
             return query;

@@ -53,14 +53,14 @@ namespace Database
 
             var iHaveIds = modelBuilder.Model.GetEntityTypes()
                 .Select(x => x.ClrType)
-                .Where(x => !x.IsAbstract && !x.IsInterface && x.GetInterfaces().Contains(typeof(IUuidModel)));
+                .Where(x => !x.IsAbstract && !x.IsInterface && x.GetInterfaces().Contains(typeof(IBaseModel)));
 
             foreach (var haveId in iHaveIds)
             {
                 modelBuilder.Entity(haveId, builder =>
                 {
-                    builder.HasIndex(nameof(IUuidModel.Uuid)).IsUnique();
-                    builder.Property(nameof(IUuidModel.Uuid)).HasDefaultValueSql("newid()");
+                    builder.HasIndex(nameof(IBaseModel.Uuid)).IsUnique();
+                    builder.Property(nameof(IBaseModel.Uuid)).HasDefaultValueSql("newid()");
                 });
             }
         }

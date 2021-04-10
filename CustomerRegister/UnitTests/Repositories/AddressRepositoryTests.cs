@@ -268,13 +268,20 @@ namespace UnitTests.Repositories
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
 
-            sut.DeleteAsync(uuid);
+            await sut.DeleteAsync(uuid);
             await unitOfWork.SaveChangesAsync();
 
             var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
             Assert.False(deletedAddress.IsActive);
-
         }
         
+        [Fact]
+        public async Task DeleteAsyncShouldNotThrowExceptionsGivenNonExistingEntry()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            await sut.DeleteAsync(Guid.NewGuid());
+            Assert.True(true);
+        }
     }
 }

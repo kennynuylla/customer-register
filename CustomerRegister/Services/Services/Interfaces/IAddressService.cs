@@ -11,5 +11,6 @@ namespace Services.Services.Interfaces
         Task<IServiceResult> ListAsync(PaginationData pagination);
         Task<IServiceResult> DetailAsync(Guid uuid); 
         IServiceResult Save(Address address);
+        Task<IServiceResult> DeleteAsync(Guid uuid);
     }
 }

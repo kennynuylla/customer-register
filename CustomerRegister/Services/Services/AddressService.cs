@@ -30,7 +30,7 @@ namespace Services.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error while listing addresses", pagination);
+                _logger.LogError(e, "Error while listing addresses");
                 return new FailResult();
             }
         }
@@ -46,7 +46,7 @@ namespace Services.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error while retrieving address", new {uuid});
+                _logger.LogError(e, "Error while retrieving address");
                 return new FailResult();
             }
         }
@@ -60,7 +60,21 @@ namespace Services.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error while saving address", address);
+                _logger.LogError(e, "Error while saving address");
+                return new FailResult();
+            }
+        }
+
+        public async Task<IServiceResult> DeleteAsync(Guid uuid)
+        {
+            try
+            {
+                await _addressRepository.DeleteAsync(uuid);
+                return new SuccessResult();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while deleting address");
                 return new FailResult();
             }
         }

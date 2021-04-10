@@ -156,5 +156,26 @@ namespace UnitTests.Services
             Assert.Equal(total, pagination.Total);
         }
 
+        [Fact]
+        public async Task DeleteShouldSetIsActiveToFalse()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var uuid = Guid.NewGuid();
+            var address = GetDummyAddress(uuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            await sut.DeleteAsync(uuid);
+            await unitOfWork.SaveChangesAsync();
+
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            Assert.False(deletedAddress.IsActive);
+        }
+
     }
 }

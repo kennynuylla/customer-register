@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Domain.Models.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Services.DataStructures.Structs;
 using Services.Repositories;
 
@@ -12,12 +13,14 @@ namespace Database.Repositories.Base
 {
     internal abstract class RepositoryBase<TModel> : IRepositoryBase<TModel> where TModel : class, IBaseModel
     {
-        protected ApplicationContext _context;
+        protected readonly ApplicationContext Context;
         protected DbSet<TModel> Set;
+        protected ILogger<RepositoryBase<TModel>> Logger;
 
-        public RepositoryBase(ApplicationContext context)
+        public RepositoryBase(ApplicationContext context, ILogger<RepositoryBase<TModel>> logger)
         {
-            _context = context;
+            Context = context;
+            Logger = logger;
             Set = context.Set<TModel>();
         }
 
@@ -66,15 +69,16 @@ namespace Database.Repositories.Base
                 model.Uuid = Guid.NewGuid();
                 Set.Add(model);
             }
-            else _context.Entry(model).State = EntityState.Modified;
+            else Context.Entry(model).State = EntityState.Modified;
 
             return model.Uuid;
         }
 
         public async Task DeleteAsync(Guid uuid)
         {
-            var addressToDeleteTracked = await Set.FirstAsync(x => x.Uuid == uuid);
-            addressToDeleteTracked.IsActive = false;
+            var addressToDeleteTracked = await Set.FirstOrDefaultAsync(x => x.Uuid == uuid && x.IsActive);
+            if(addressToDeleteTracked is not null) addressToDeleteTracked.IsActive = false;
+            else Logger.LogWarning("Repository: You are trying to delete a non existing model of type {0} with Uuid={1}. Take care.", typeof(TModel), uuid);
         }
     }
 }

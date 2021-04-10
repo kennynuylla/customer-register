@@ -10,6 +10,7 @@ using Domain.Models;
 using IntegrationTests.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Services.DataStructures.Structs;
 using WebAPI.Models.Customer;
 using Xunit;
 
@@ -73,6 +74,29 @@ namespace IntegrationTests.Controllers
             
             var result  = await sut.GetAsync($"Customer/Get/{Guid.NewGuid()}");
             Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task ListShouldReturnAListOfCustomer()
+        {
+            const int total = 13;
+            const int perPage = 20;
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+            var result = await sut.GetAsync($"Customer/List?currentPage=1&perPAge={perPage}");
+            result.EnsureSuccessStatusCode();
+            var serializedResult = await result.Content.ReadAsStringAsync();
+            var deserializedResult = JsonSerializer.Deserialize<PaginationResult<CustomerListItemModel>>(serializedResult,
+                scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
+            var customers = deserializedResult.Elements;
+            foreach (var customer in customers)
+            {
+                Assert.NotEqual(default, customer.Uuid);
+                Assert.Equal(CustomerFixture.Name, customer.Name);
+            }
         }
     }
 }

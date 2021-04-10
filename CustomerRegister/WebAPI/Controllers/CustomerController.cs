@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Services.Interfaces;
 using WebAPI.Controllers.Base;
 using WebAPI.Models.Customer;
@@ -53,6 +55,31 @@ namespace WebAPI.Controllers
             var result = await _customerService.DetailAsync(uuid);
             if (result is not SuccessResult<Customer> successResult) return FailResult(result);
             return successResult.Result;
+        }
+
+        /// <summary>
+        /// Lists the customers
+        /// </summary>
+        /// <param name="currentPage">Specifies the current page (starting with 1)</param>
+        /// <param name="perPage">The number of entries in each page</param>
+        /// <response code="200">Returns a list of customers</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpGet]
+        public async Task<ActionResult<PaginationResult<CustomerListItemModel>>> List(int currentPage, int perPage)
+        {
+            var result = await _customerService.ListAsync(new PaginationData
+            {
+                CurrentPage = currentPage,
+                PerPage = perPage
+            });
+            if (result is not SuccessResult<PaginationResult<Customer>> successResult) return FailResult(result);
+            return new PaginationResult<CustomerListItemModel>
+            {
+                Elements = successResult.Result.Elements.Select(x => new CustomerListItemModel(x)),
+                Pagination = successResult.Result.Pagination,
+                Total = successResult.Result.Total
+            };
         }
     }
 }

@@ -27,9 +27,11 @@ namespace Services.Services
         {
             try
             {
+                if (!await _addressRepository.CheckExistenceAsync(addressUuid)) return new NotFoundResult();
                 var address = await _addressRepository.GetAsync(addressUuid);
                 phone.PhoneAddressId = address.Id;
                 var phoneUuid = await _localPhoneRepository.SaveAsync(phone);
+                if (phoneUuid == default) return new NotFoundResult();
                 return new SuccessResult<Guid>(phoneUuid);
             }
             catch (Exception e)

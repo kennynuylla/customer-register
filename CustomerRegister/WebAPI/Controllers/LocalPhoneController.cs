@@ -86,6 +86,22 @@ namespace WebAPI.Controllers
                 Total = successResult.Result.Total
             };
         }
+
+        /// <summary>
+        /// Updates a local phone
+        /// </summary>
+        /// <response code="204">Operation successful</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpPut("{uuid}")]
+        public async Task<ActionResult> Update(Guid uuid, UpdateLocalPhoneModel model)
+        {
+            var (phone, addressUuid) = model.GetPhone(uuid);
+            var result = await _localPhoneService.SaveAsync(phone, addressUuid);
+            if (!result.IsSuccessful) return FailResult(result);
+            if (await _unitOfWork.SaveChangesAsync()) return NoContent();
+            return ErrorResult();
+        }
         
     }
 }

@@ -24,17 +24,17 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            
+
             var address = AddressFixture.GetDummyAddress(Guid.NewGuid());
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
 
-            var result =  await sut.SaveAsync(LocalPhoneFixture.GetDummyLocalPhone(address.Id), address.Uuid);
+            var result = await sut.SaveAsync(LocalPhoneFixture.GetDummyLocalPhone(address.Id), address.Uuid);
             await unitOfWork.SaveChangesAsync();
 
             var phone = await context.LocalPhones.Include(x => x.PhoneAddress).FirstAsync();
-            
+
             Assert.True(result.IsSuccessful);
             Assert.Equal(LocalPhoneFixture.Number, phone.Number);
             Assert.Equal(LocalPhoneFixture.AreaCode, phone.AreaCode);
@@ -53,7 +53,7 @@ namespace UnitTests.Services
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
-            
+
             await context.LocalPhones.AddAsync(LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id));
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
@@ -62,7 +62,7 @@ namespace UnitTests.Services
             var successResult = (SuccessResult<LocalPhone>) result;
             var insertedPhone = successResult.Result;
             var insertedAddress = insertedPhone.PhoneAddress;
-            
+
             Assert.Equal(LocalPhoneFixture.Number, insertedPhone.Number);
             Assert.Equal(LocalPhoneFixture.AreaCode, insertedPhone.AreaCode);
             Assert.Equal(AddressFixture.Country, insertedAddress.Country);
@@ -87,7 +87,7 @@ namespace UnitTests.Services
         {
             const int total = 5;
             const int perPage = 8;
-            
+
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
@@ -116,6 +116,104 @@ namespace UnitTests.Services
                 Assert.Equal(addressUuid, phone.PhoneAddress.Uuid);
             }
         }
-        
+
+        [Fact]
+        public async Task SaveShouldReturnNotFoundResultGivenNonExistingPhoneUuid()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var addressUuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(addressUuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var dummyPhone = new LocalPhone
+            {
+                Uuid = Guid.NewGuid()
+            };
+
+            var result = await sut.SaveAsync(dummyPhone, addressUuid);
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task SaveShouldReturnNotFoundResultGivenNonExistingAddressUuid()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var (address, phone) = await AddPhoneAndAddress(context);
+
+            var phoneToEdit = new LocalPhone
+            {
+                Id = phone.Id,
+                Uuid = phone.Uuid,
+                Number = "4578-8795",
+                AreaCode = "84"
+            };
+
+            var result = await sut.SaveAsync(phoneToEdit, Guid.NewGuid());
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task SaveShouldUpdateGivenExistingEntry()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+            var (address, phone) = await AddPhoneAndAddress(context);
+
+            var newAddressUuid = Guid.NewGuid();
+            var newAddress = AddressFixture.GetDummyAddress(newAddressUuid);
+            await context.Addresses.AddAsync(newAddress);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+            
+            const string newNumber = "4578-8795";
+            const string newAreaCode = "84";
+            var phoneToEdit = new LocalPhone
+            {
+                Id = phone.Id,
+                Uuid = phone.Uuid,
+                Number = newNumber,
+                AreaCode = newAreaCode
+            };
+
+            var result = await sut.SaveAsync(phoneToEdit, newAddress.Uuid);
+            await unitOfWork.SaveChangesAsync();
+            var newPhone = await context.LocalPhones.Include(x => x.PhoneAddress).FirstAsync(x => x.Uuid == phoneToEdit.Uuid);
+            
+            Assert.True(result.IsSuccessful);
+            Assert.Equal(phone.Uuid, newPhone.Uuid);
+            Assert.Equal(phone.Id, newPhone.Id);
+            Assert.Equal(newAddressUuid, newPhone.PhoneAddress.Uuid);
+            Assert.NotEqual(address.Uuid, newPhone.PhoneAddress.Uuid);
+            Assert.Equal(newNumber, newPhone.Number);
+            Assert.Equal(newAreaCode, newPhone.AreaCode);
+        }
+
+        private static async Task<(Address address, LocalPhone phone)> AddPhoneAndAddress(ApplicationContext context)
+        {
+            var addressUuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(addressUuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var phoneUuid = Guid.NewGuid();
+            var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
+            await context.LocalPhones.AddAsync(phone);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            return (address, phone);
+        }
     }
 }

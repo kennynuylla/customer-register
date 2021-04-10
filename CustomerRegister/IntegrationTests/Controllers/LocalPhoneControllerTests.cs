@@ -140,7 +140,47 @@ namespace IntegrationTests.Controllers
                 Assert.Equal(addressUuid, localPhone.AddressUuid);
                 Assert.NotEqual(default, localPhone.AddressDescription);
             }
+        }
 
+        [Fact]
+        public async Task UpdateShouldUpdateExistingEntry()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var addressUuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(addressUuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var phoneUuid = Guid.NewGuid();
+            var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
+            await context.LocalPhones.AddAsync(phone);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            const string newNumber = "54879";
+            var newPhone = new UpdateLocalPhoneModel
+            {
+                Id = phone.Id,
+                Number = newNumber,
+                AreaCode = phone.AreaCode,
+                AddressUuid = addressUuid
+            };
+            var serializedRequest = JsonSerializer.Serialize(newPhone);
+            var contentRequest = new StringContent(serializedRequest, Encoding.Default, "application/json");
+            var result = await sut.PutAsync($"LocalPhone/Update/{phoneUuid}", contentRequest);
+            result.EnsureSuccessStatusCode();
+
+            var insertedPhone = await context.LocalPhones.FirstAsync();
+
+            Assert.Equal(phone.Id, insertedPhone.Id);
+            Assert.Equal(phone.Uuid, insertedPhone.Uuid);
+            Assert.Equal(newNumber, insertedPhone.Number);
+            Assert.Equal(phone.AreaCode, insertedPhone.AreaCode);
+            Assert.Equal(phone.PhoneAddressId, insertedPhone.PhoneAddressId);
         }
     }
 }

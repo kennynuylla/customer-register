@@ -61,7 +61,7 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Lists the addresses
+        /// Lists the local phones
         /// </summary>
         /// <param name="currentPage">Specifies the current page (starting with 1)</param>
         /// <param name="perPage">The number of entries in each page</param>
@@ -104,7 +104,7 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Deletes an address
+        /// Deletes a local phone
         /// </summary>
         /// <response code="204">Operation successful</response>
         /// <response code="400" >Bad Request</response>

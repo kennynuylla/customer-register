@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Database.UnitOfWork.Interfaces;
+using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
@@ -34,8 +35,24 @@ namespace WebAPI.Controllers
             var customer = model.GetCustomer();
             var result = await _customerService.SaveAsync(customer);
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
-            if (await _unitOfWork.SaveChangesAsync()) return new StatusCodeResult(201);
+            if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {uuid = successResult.Result}, null);
             return ErrorResult();
+        }
+
+        /// <summary>
+        /// Gets all information from specific customer
+        /// </summary>
+        /// <returns>An existing customer</returns>
+        /// <response code="200">Returns the customer</response>
+        /// <response code="400">Bad Request</response>
+        /// <response code="404">customer not found</response>
+        /// <response code="500">An error occurred</response>     
+        [HttpGet("{uuid}")]
+        public async Task<ActionResult<Customer>> Get(Guid uuid)
+        {
+            var result = await _customerService.DetailAsync(uuid);
+            if (result is not SuccessResult<Customer> successResult) return FailResult(result);
+            return successResult.Result;
         }
     }
 }

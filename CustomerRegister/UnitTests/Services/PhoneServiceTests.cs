@@ -168,5 +168,21 @@ namespace UnitTests.Services
                 Assert.Equal(customer.Uuid, phone.Customer.Uuid);
             }
         }
+
+        [Fact]
+        public async Task DeleteAsyncShouldSetIsActiveToFalse()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var (_, phone) = await SeedDatabaseFixture.AddDummyCustomerAndPhoneAsync(context);
+
+            var result = await sut.DeleteAsync(phone.Uuid);
+            var deletedPhone = await context.Phones.FirstAsync();
+            
+            Assert.True(result.IsSuccessful);
+            Assert.False(deletedPhone.IsActive);
+            Assert.NotEqual(default, deletedPhone.Uuid);
+        }
     }
 }

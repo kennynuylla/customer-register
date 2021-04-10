@@ -159,13 +159,15 @@ namespace UnitTests.Services
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-            var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+            var (customer, phone) = await SeedDatabaseFixture.AddDummyCustomerAndPhoneAsync(context);
 
             var result = await sut.DeleteAsync(customer.Uuid);
             var deletedCustomer = await context.Customers.FirstAsync();
+            var deletedPhone = await context.Phones.FirstAsync();
 
             Assert.True(result.IsSuccessful);
             Assert.False(deletedCustomer.IsActive);
+            Assert.False(deletedPhone.IsActive);
         }
     }
 }

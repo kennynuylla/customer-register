@@ -137,5 +137,22 @@ namespace IntegrationTests.Controllers
             Assert.Equal(updateRequest.AreaCode, editedPhone.AreaCode);
             Assert.Equal(phone.CustomerId, editedPhone.CustomerId);
         }
+
+        [Fact]
+        public async Task DeleteAsyncShouldSetIsActiveToFalse()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var (_, phone) = await SeedDatabaseFixture.AddDummyCustomerAndPhoneAsync(context);
+
+            var result = await sut.DeleteAsync($"Phone/Delete/{phone.Uuid}");
+            result.EnsureSuccessStatusCode();
+            var deletedPhone = await context.Phones.FirstAsync();
+            
+            Assert.False(deletedPhone.IsActive);
+            Assert.Equal(phone.Id, deletedPhone.Id);
+            Assert.Equal(phone.Uuid, deletedPhone.Uuid);
+        }
     }
 }

@@ -67,5 +67,19 @@ namespace Services.Services
                 return new FailResult();
             }
         }
+
+        public async Task<IServiceResult> DeleteAsync(Guid uuid)
+        {
+            try
+            {
+                await _phoneRepository.DeleteAsync(uuid);
+                return new SuccessResult();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while deleting");
+                return new FailResult();
+            }
+        }
     }
 }

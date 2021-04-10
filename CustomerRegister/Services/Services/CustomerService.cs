@@ -13,12 +13,14 @@ namespace Services.Services
     internal class CustomerService : ICustomerService
     {
         private  readonly ICustomerRepository _customerRepository;
+        private readonly IPhoneRepository _phoneRepository;
         private  readonly ILogger<CustomerService> _logger;
 
-        public CustomerService(ICustomerRepository customerRepository, ILogger<CustomerService> logger)
+        public CustomerService(ICustomerRepository customerRepository, ILogger<CustomerService> logger, IPhoneRepository phoneRepository)
         {
             _customerRepository = customerRepository;
             _logger = logger;
+            _phoneRepository = phoneRepository;
         }
 
         public async Task<IServiceResult> SaveAsync(Customer customer)
@@ -72,6 +74,11 @@ namespace Services.Services
         {
             try
             {
+                var phonesUuids = await _phoneRepository.GetUuidsFromCustomer(uuid);
+                foreach (var phoneUuid in phonesUuids)
+                {
+                    await _phoneRepository.DeleteAsync(phoneUuid);
+                }
                 await _customerRepository.DeleteAsync(uuid);
                 return new SuccessResult();
             }

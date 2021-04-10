@@ -70,7 +70,15 @@ namespace UnitTests.Services
             Assert.Equal(AddressFixture.Number, insertedAddress.Number);
             Assert.Equal(AddressFixture.State, insertedAddress.State);
             Assert.Equal(AddressFixture.Street, insertedAddress.Street);
+        }
 
+        [Fact]
+        public async Task DetailAsyncShouldReturnNotFoundResultGivenNonExistingEntry()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
+
+            Assert.IsType<NotFoundResult>(await sut.DetailAsync(Guid.NewGuid()));
         }
         
     }

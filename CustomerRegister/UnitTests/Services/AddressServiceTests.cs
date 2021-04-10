@@ -74,13 +74,13 @@ namespace UnitTests.Services
         }
 
         [Fact]
-        public async Task DetailAsyncShouldReturnFailResultGivenNonExistingEntry()
+        public async Task DetailAsyncShouldReturnNotFoundResultGivenNonExistingEntry()
         {
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
 
             var result = await sut.DetailAsync(Guid.NewGuid());
-            Assert.False(result.IsSuccessful);
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]

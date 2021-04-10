@@ -166,7 +166,6 @@ namespace IntegrationTests.Controllers
             var contentJson = new StringContent(serializedJson, Encoding.UTF8, "application/json");
 
             var result = await sut.PutAsync($"Address/Update/{uuid}", contentJson);
-            var texto = await result.Content.ReadAsStringAsync();
             result.EnsureSuccessStatusCode();
 
             var uniqueAddress = await context.Addresses.FirstAsync();
@@ -179,7 +178,25 @@ namespace IntegrationTests.Controllers
             Assert.Equal(newStreet, uniqueAddress.Street);
             Assert.Equal(newNumber, uniqueAddress.Number);
             Assert.Equal(uuid, uniqueAddress.Uuid);
-            
+        }
+
+        [Fact]
+        public async Task DeleteShouldSetIsActiveToFalse()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = _factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var uuid = Guid.NewGuid();
+            await context.AddAsync(GetDummyAddress(uuid));
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var result = await sut.DeleteAsync($"Address/Delete/{uuid}");
+            result.EnsureSuccessStatusCode();
+
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            Assert.False(deletedAddress.IsActive);
         }
 
         private Address GetDummyAddress() => new Address

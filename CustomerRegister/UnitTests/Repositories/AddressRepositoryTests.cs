@@ -280,7 +280,9 @@ namespace UnitTests.Repositories
         {
             using var scope = _serviceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             await sut.DeleteAsync(Guid.NewGuid());
+            await unitOfWork.SaveChangesAsync();
             Assert.True(true);
         }
     }

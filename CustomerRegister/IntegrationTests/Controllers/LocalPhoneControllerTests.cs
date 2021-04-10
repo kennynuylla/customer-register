@@ -182,5 +182,22 @@ namespace IntegrationTests.Controllers
             Assert.Equal(phone.AreaCode, insertedPhone.AreaCode);
             Assert.Equal(phone.PhoneAddressId, insertedPhone.PhoneAddressId);
         }
+
+        [Fact]
+        public async Task DeleteShouldSetIsActiveToFalse()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var (_, phone) = await SeedDatabaseFixture.AddPhoneAndAddressAsync(context);
+
+            var result = await sut.DeleteAsync($"LocalPhone/Delete/{phone.Uuid}");
+            result.EnsureSuccessStatusCode();
+
+            var deletedPhone = await context.LocalPhones.FirstAsync();
+            Assert.Equal(phone.Uuid, deletedPhone.Uuid);
+            Assert.False(deletedPhone.IsActive);
+        }
     }
 }

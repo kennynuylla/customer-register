@@ -189,6 +189,7 @@ namespace IntegrationTests.Controllers
             result.EnsureSuccessStatusCode();
 
             var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            Assert.Equal(1,context.Addresses.Count());
             Assert.False(deletedAddress.IsActive);
         }
     }

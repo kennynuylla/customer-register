@@ -102,6 +102,21 @@ namespace WebAPI.Controllers
             if (await _unitOfWork.SaveChangesAsync()) return NoContent();
             return ErrorResult();
         }
+
+        /// <summary>
+        /// Deletes an address
+        /// </summary>
+        /// <response code="204">Operation successful</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpDelete("{uuid}")]
+        public async Task<ActionResult> Delete(Guid uuid)
+        {
+            var result = await _localPhoneService.DeleteAsync(uuid);
+            if (!result.IsSuccessful) return FailResult(result);
+            if (await _unitOfWork.SaveChangesAsync()) return NoContent();
+            return ErrorResult();
+        }
         
     }
 }

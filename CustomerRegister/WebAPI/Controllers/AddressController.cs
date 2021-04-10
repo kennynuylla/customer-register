@@ -26,22 +26,8 @@ namespace WebAPI.Controllers
             _addressService = addressService;
             _unitOfWork = unitOfWork;
         }
-        /// <summary>
-        /// Gets all information from specific address
-        /// </summary>
-        /// <returns>An existing address</returns>
-        /// <response code="200">Returns the address</response>
-        /// <response code="400">Bad Request</response>
-        /// <response code="404">Address not found</response>
-        /// <response code="500">An error occurred</response>     
-        [HttpGet("{uuid}")]
-        public async Task<ActionResult<Address>> Get(Guid uuid)
-        {
-            var result = await _addressService.DetailAsync(uuid);
-            if (result is not SuccessResult<Address> successResult) return FailResult(result);
-            return successResult.Result;
-        }
         
+                
         /// <summary>
         /// Adds an address
         /// </summary>
@@ -58,6 +44,24 @@ namespace WebAPI.Controllers
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {uuid = successResult.Result}, null);
             return ErrorResult();
+        }
+
+        
+        
+        /// <summary>
+        /// Gets all information from specific address
+        /// </summary>
+        /// <returns>An existing address</returns>
+        /// <response code="200">Returns the address</response>
+        /// <response code="400">Bad Request</response>
+        /// <response code="404">Address not found</response>
+        /// <response code="500">An error occurred</response>     
+        [HttpGet("{uuid}")]
+        public async Task<ActionResult<Address>> Get(Guid uuid)
+        {
+            var result = await _addressService.DetailAsync(uuid);
+            if (result is not SuccessResult<Address> successResult) return FailResult(result);
+            return successResult.Result;
         }
 
         /// <summary>

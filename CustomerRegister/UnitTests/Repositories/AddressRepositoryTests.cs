@@ -207,6 +207,52 @@ namespace UnitTests.Repositories
             Assert.Empty(result.Elements);
             Assert.Equal(0, result.Total);
         }
+
+        [Fact]
+        public async Task EditShouldUpdateANewEntry()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var uuid = Guid.NewGuid();
+            var address = GetDummyAddress(uuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            const string newCity = "Paraíso do Tocantins";
+            const string newZipCode = "335045-879";
+            const string newCountry = "Bengium";
+            const string newState = "Test";
+            const string newStreet = "Another street";
+            const int newNumber = 800;
+
+            var editedAddress = new Address
+            {
+                City = newCity,
+                Country = newCountry,
+                Number = newNumber,
+                State = newState,
+                Street = newStreet,
+                Uuid = uuid,
+                ZipCode = newZipCode,
+                Id = address.Id
+            };
+
+            sut.Save(editedAddress);
+            await unitOfWork.SaveChangesAsync();
+
+            var insertedAddress = await context.Addresses.FirstAsync();
+            Assert.Equal(newCity, insertedAddress.City);
+            Assert.Equal(newCountry, insertedAddress.Country);
+            Assert.Equal(newState, insertedAddress.State);
+            Assert.Equal(newZipCode, insertedAddress.ZipCode);
+            Assert.Equal(newStreet, insertedAddress.Street);
+            Assert.Equal(newNumber, insertedAddress.Number);
+            Assert.Equal(uuid, insertedAddress.Uuid);
+        }
         
     }
 }

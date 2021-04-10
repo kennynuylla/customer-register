@@ -24,13 +24,15 @@ namespace Database.Repositories.Base
         public async Task<PaginationResult<TModel>> ListAsync(PaginationData pagination, params Expression<Func<TModel, object>>[] includes)
         {
             var filteredQuery = Set
+                .AsNoTracking()
                 .Where(x => x.IsActive);
-            
+
             var query = filteredQuery
                 .Skip((pagination.CurrentPage - 1) * pagination.PerPage)
                 .Take(pagination.PerPage);
 
             query = AggregateIncludes(query, includes);
+            query.OrderBy(x => x.Uuid);
             var list = await query.ToListAsync();
 
             return new PaginationResult<TModel>
@@ -43,7 +45,10 @@ namespace Database.Repositories.Base
 
         public async Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes)
         {
-            var query = Set.Where(x => x.Uuid == uuid && x.IsActive);
+            var query = Set
+                .Where(x => x.Uuid == uuid && x.IsActive)
+                .AsNoTracking();
+            
             query = AggregateIncludes(query, includes);
             return await query.FirstOrDefaultAsync();
         }

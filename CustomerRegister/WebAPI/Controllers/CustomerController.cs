@@ -81,5 +81,21 @@ namespace WebAPI.Controllers
                 Total = successResult.Result.Total
             };
         }
+
+        /// <summary>
+        /// Updates a customer
+        /// </summary>
+        /// <response code="204">Operation successful</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpPut("{uuid}")]
+        public async Task<ActionResult> Update(Guid uuid, UpdateCustomerModel model)
+        {
+            var customer = model.GetCustomer(uuid);
+            var result = await _customerService.SaveAsync(customer);
+            if (!result.IsSuccessful) return FailResult(result);
+            if (await _unitOfWork.SaveChangesAsync()) return NoContent();
+            return ErrorResult();
+        }
     }
 }

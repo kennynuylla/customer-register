@@ -98,5 +98,32 @@ namespace IntegrationTests.Controllers
                 Assert.Equal(CustomerFixture.Name, customer.Name);
             }
         }
+
+        [Fact]
+        public async Task UpdateShouldUpdateAnExistingCustomer()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+            var editRequest = new UpdateCustomerModel
+            {
+                Email = "updated@test.com",
+                Id = customer.Id,
+                Name = "Charlie"
+            };
+            var serializedRequest = JsonSerializer.Serialize(editRequest);
+            var contentRequest = new StringContent(serializedRequest, Encoding.UTF8, "application/json");
+            var result = await sut.PutAsync($"Customer/Update/{customer.Uuid}", contentRequest);
+            result.EnsureSuccessStatusCode();
+            var savedCustomer = await context.Customers.FirstAsync();
+            
+            Assert.Equal(customer.Uuid, savedCustomer.Uuid);
+            Assert.Equal(customer.Id, savedCustomer.Id);
+            Assert.Equal(editRequest.Email, savedCustomer.Email);
+            Assert.Equal(editRequest.Name, savedCustomer.Name);
+
+        }
     }
 }

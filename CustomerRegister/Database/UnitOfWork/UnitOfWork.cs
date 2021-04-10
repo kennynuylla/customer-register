@@ -21,6 +21,7 @@ namespace Database.UnitOfWork
             try
             {
                 await _context.SaveChangesAsync();
+                _context.ChangeTracker.Clear();
                 return true;
             }
             catch (Exception e)

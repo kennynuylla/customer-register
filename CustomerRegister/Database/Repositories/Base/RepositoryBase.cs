@@ -31,9 +31,9 @@ namespace Database.Repositories.Base
                 .Where(x => x.IsActive);
 
             var query = AggregateIncludes(filteredQuery, includes)
+                .OrderBy(x => x.Id)
                 .Skip((pagination.CurrentPage - 1) * pagination.PerPage)
-                .Take(pagination.PerPage)
-                .OrderBy(x => x.Id);
+                .Take(pagination.PerPage);
             
             var list = await query.ToListAsync();
 

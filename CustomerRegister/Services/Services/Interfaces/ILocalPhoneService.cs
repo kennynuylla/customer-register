@@ -11,5 +11,6 @@ namespace Services.Services.Interfaces
         Task<IServiceResult> SaveAsync(LocalPhone phone, Guid addressUuid);
         Task<IServiceResult> DetailAsync(Guid uuid);
         Task<IServiceResult> ListAsync(PaginationData pagination);
+        Task<IServiceResult> DeleteAsync(Guid uuid);
     }
 }

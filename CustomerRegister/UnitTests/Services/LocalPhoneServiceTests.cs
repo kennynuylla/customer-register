@@ -146,7 +146,7 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (address, phone) = await AddPhoneAndAddress(context);
+            var (address, phone) = await AddPhoneAndAddressAsync(context);
 
             var phoneToEdit = new LocalPhone
             {
@@ -168,7 +168,7 @@ namespace UnitTests.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var (address, phone) = await AddPhoneAndAddress(context);
+            var (address, phone) = await AddPhoneAndAddressAsync(context);
 
             var newAddressUuid = Guid.NewGuid();
             var newAddress = AddressFixture.GetDummyAddress(newAddressUuid);
@@ -199,7 +199,7 @@ namespace UnitTests.Services
             Assert.Equal(newAreaCode, newPhone.AreaCode);
         }
 
-        private static async Task<(Address address, LocalPhone phone)> AddPhoneAndAddress(ApplicationContext context)
+        private static async Task<(Address address, LocalPhone phone)> AddPhoneAndAddressAsync(ApplicationContext context)
         {
             var addressUuid = Guid.NewGuid();
             var address = AddressFixture.GetDummyAddress(addressUuid);
@@ -214,6 +214,26 @@ namespace UnitTests.Services
             context.ChangeTracker.Clear();
 
             return (address, phone);
+        }
+
+        [Fact]
+        public async Task DeleteAsyncShouldSetIsActiveToFalse()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var (_, phone) = await AddPhoneAndAddressAsync(context);
+
+            var result = await sut.DeleteAsync(phone.Uuid);
+            await unitOfWork.SaveChangesAsync();
+
+            var deletedPhone = await context.LocalPhones.FirstAsync();
+            
+            Assert.True(result.IsSuccessful);
+            Assert.Equal(phone.Uuid, deletedPhone.Uuid);
+            Assert.False(deletedPhone.IsActive);
         }
     }
 }

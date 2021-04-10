@@ -111,6 +111,31 @@ namespace IntegrationTests.Controllers
             }
         }
 
+        [Fact]
+        public async Task UpdateShouldUpdateAnExistingPhone()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = Factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var (customer, phone) = await SeedDatabaseFixture.AddDummyCustomerAndPhoneAsync(context);
 
+            var updateRequest = new UpdatePhoneModel
+            {
+                Id = phone.Id,
+                Number = "4567-8941",
+                AreaCode = "11",
+                CustomerUuid = customer.Uuid
+            };
+            var serializedRequest = JsonSerializer.Serialize(updateRequest);
+            var contentRequest = new StringContent(serializedRequest, Encoding.UTF8, "application/json");
+            var result = await sut.PutAsync($"Phone/Update/{phone.Uuid}", contentRequest);
+            result.EnsureSuccessStatusCode();
+            var editedPhone = await context.Phones.FirstAsync();
+            
+            Assert.Equal(phone.Id, editedPhone.Id);
+            Assert.Equal(updateRequest.Number, editedPhone.Number);
+            Assert.Equal(updateRequest.AreaCode, editedPhone.AreaCode);
+            Assert.Equal(phone.CustomerId, editedPhone.CustomerId);
+        }
     }
 }

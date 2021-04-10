@@ -40,8 +40,8 @@ namespace Services.Services
             try
             {
                 var address = await _addressRepository.GetAsync(uuid);
-                
-                if (address is null) return new FailResult(new[] {"Unable to find address"});
+
+                if (address is null) return new NotFoundResult(); 
                 return new SuccessResult<Address>(address);
             }
             catch (Exception e)

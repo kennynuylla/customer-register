@@ -84,7 +84,7 @@ namespace UnitTests.Repositories
         }
 
         [Fact]
-        public async Task GetShouldReturnEnExistingAddress()
+        public async Task GetShouldReturnAnExistingAddress()
         {
             using var scope = _serviceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();

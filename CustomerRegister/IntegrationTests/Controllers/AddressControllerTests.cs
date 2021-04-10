@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -90,6 +91,18 @@ namespace IntegrationTests.Controllers
             Assert.Equal(ZipCode, deserializedResult.ZipCode);
             Assert.Equal(State, deserializedResult.State);
             Assert.Equal(Number, deserializedResult.Number);
+        }
+        
+        [Fact]
+        public async Task GetShouldReturn404GivenNonExistingEntry()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = _factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var result = await sut.GetAsync($"Address/Get/{Guid.NewGuid()}");
+            
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
         }
 
         [Theory]

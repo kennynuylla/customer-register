@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Domain.Models;
 using Microsoft.Extensions.Logging;
@@ -13,17 +16,19 @@ namespace Services.Services
     internal class CustomerService : ICustomerService
     {
         private  readonly ICustomerRepository _customerRepository;
+        private readonly IAddressRepository _addressRepository;
         private readonly IPhoneRepository _phoneRepository;
         private  readonly ILogger<CustomerService> _logger;
 
-        public CustomerService(ICustomerRepository customerRepository, ILogger<CustomerService> logger, IPhoneRepository phoneRepository)
+        public CustomerService(ICustomerRepository customerRepository, ILogger<CustomerService> logger, IPhoneRepository phoneRepository, IAddressRepository addressRepository)
         {
             _customerRepository = customerRepository;
             _logger = logger;
             _phoneRepository = phoneRepository;
+            _addressRepository = addressRepository;
         }
 
-        public async Task<IServiceResult> SaveAsync(Customer customer)
+        public async Task<IServiceResult> SaveAsync(Customer customer, IEnumerable<Guid> addresses)
         {
             try
             {
@@ -32,7 +37,7 @@ namespace Services.Services
                     {
                         "Email already registered."
                     });
-                var insertedUuid = await _customerRepository.SaveAsync(customer);
+                var insertedUuid = await GetInsertedUuidAsync(customer, addresses);
                 return insertedUuid == default ? (IServiceResult) new NotFoundResult() : new SuccessResult<Guid>(insertedUuid);
             }
             catch (Exception e)
@@ -42,12 +47,30 @@ namespace Services.Services
             }
         }
 
+        private async Task<Guid> GetInsertedUuidAsync(Customer customer, IEnumerable<Guid> addresses)
+        {
+            var addressesToAdd =  new List<Address>();
+            foreach (var uuid in addresses)
+            {
+                var address = await _addressRepository.GetTrackedAsync(uuid);
+                addressesToAdd.Add(address);
+            }
+            customer.Addresses = addressesToAdd;
+            var insertedUuid = await _customerRepository.SaveAsync(customer);
+            return insertedUuid;
+        }
+        
+
+
         public async Task<IServiceResult> DetailAsync(Guid uuid)
         {
             try
             {
-                var customer = await _customerRepository.GetAsync(uuid);
-                return customer is null ? new NotFoundResult() : new SuccessResult<Customer>(customer);
+                var address = await _addressRepository.GetAddressesFromCustomer(uuid);
+                var customer = await _customerRepository.GetAsync(uuid, x=> x.Addresses);
+                if (customer is null) return new NotFoundResult();
+                customer.Addresses = address;
+                return new SuccessResult<Customer>(customer);
             }
             catch (Exception e)
             {

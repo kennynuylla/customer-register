@@ -34,8 +34,8 @@ namespace WebAPI.Controllers
         [HttpPost]
         public async Task<ActionResult> Add(AddCustomerModel model)
         {
-            var customer = model.GetCustomer();
-            var result = await _customerService.SaveAsync(customer);
+            var (customer, uuids) = model.GetCustomer();
+            var result = await _customerService.SaveAsync(customer, uuids);
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {uuid = successResult.Result}, null);
             return ErrorResult();
@@ -91,8 +91,8 @@ namespace WebAPI.Controllers
         [HttpPut("{uuid}")]
         public async Task<ActionResult> Update(Guid uuid, UpdateCustomerModel model)
         {
-            var customer = model.GetCustomer(uuid);
-            var result = await _customerService.SaveAsync(customer);
+            var (customer, uuids) = model.GetCustomer(uuid);
+            var result = await _customerService.SaveAsync(customer, uuids);
             if (!result.IsSuccessful) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return NoContent();
             return ErrorResult();

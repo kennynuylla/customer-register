@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CommonFixtures;
 using Database;
@@ -24,15 +25,18 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            var result = await sut.SaveAsync(CustomerFixture.GetDummyCustomer());
+            var result = await sut.SaveAsync(CustomerFixture.GetDummyCustomer(), new []{address.Uuid});
             await unitOfWork.SaveChangesAsync();
 
-            var customer = await context.Customers.FirstAsync();
+            var customer = await context.Customers.Include(x => x.Addresses).FirstAsync();
             
             Assert.True(result.IsSuccessful);
             Assert.Equal(CustomerFixture.Name, customer.Name);
             Assert.NotEqual(default, customer.Email);
+            Assert.NotEmpty(customer.Addresses);
+            Assert.Equal(AddressFixture.City, customer.Addresses.First().City);
         }
 
         [Fact]
@@ -53,7 +57,7 @@ namespace UnitTests.Services
                 Uuid = customer.Uuid,
                 Name = customer.Name
             };
-            var result = await sut.SaveAsync(editedCustomer);
+            var result = await sut.SaveAsync(editedCustomer, customer.Addresses.Select(x => x.Uuid));
             await unitOfWork.SaveChangesAsync();
             
             var savedCustomer = await context.Customers.FirstAsync();
@@ -61,6 +65,7 @@ namespace UnitTests.Services
             Assert.Equal(editedEmail, savedCustomer.Email);
             Assert.Equal(customer.Name, savedCustomer.Name);
             Assert.Equal(customer.Uuid, savedCustomer.Uuid);
+            Assert.Contains(customer.Addresses.First().Uuid, savedCustomer.Addresses.Select(x => x.Uuid));
         }
 
         [Fact]
@@ -80,7 +85,7 @@ namespace UnitTests.Services
                 Uuid = Guid.NewGuid(),
                 Name = customer.Name
             };
-            var result = await sut.SaveAsync(editedCustomer);
+            var result = await sut.SaveAsync(editedCustomer, customer.Addresses.Select(x => x.Uuid));
             Assert.IsType<NotFoundResult>(result);
         }
 
@@ -94,7 +99,7 @@ namespace UnitTests.Services
             const string emailToRepeat = "email@teste.com";
             var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context, emailToRepeat);
             var customerWithRepeatedEmail = CustomerFixture.GetDummyCustomer(emailToRepeat);
-            var result = await sut.SaveAsync(customerWithRepeatedEmail);
+            var result = await sut.SaveAsync(customerWithRepeatedEmail, null);
             Assert.IsType<FailResult>(result);
         }
 
@@ -120,10 +125,10 @@ namespace UnitTests.Services
             var successResult = (SuccessResult<Customer>) result;
             var detailedCustomer = successResult.Result;
             
-            Assert.Equal(customer.Addresses, detailedCustomer.Addresses);
             Assert.Equal(customer.Name, detailedCustomer.Name);
             Assert.Equal(customer.Uuid, detailedCustomer.Uuid);
             Assert.Equal(customer.Id, detailedCustomer.Id);
+            Assert.NotEmpty(detailedCustomer.Addresses);
         }
 
         [Fact]

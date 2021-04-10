@@ -42,6 +42,8 @@ namespace CommonFixtures
         {
             var emailToRegister = string.IsNullOrEmpty(email) ? Guid.NewGuid().ToString() : email;
             var customer = CustomerFixture.GetDummyCustomer(Guid.NewGuid(), emailToRegister);
+            var address = AddressFixture.GetDummyAddress(Guid.NewGuid());
+            customer.Addresses = new[] {address};
             await context.Customers.AddAsync(customer);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();

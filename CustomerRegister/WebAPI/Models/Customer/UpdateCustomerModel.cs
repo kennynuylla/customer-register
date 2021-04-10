@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace WebAPI.Models.Customer
@@ -8,13 +9,15 @@ namespace WebAPI.Models.Customer
         [RegularExpression("[1-9]*")]
         public int Id { get; set; }
 
-        public Domain.Models.Customer GetCustomer(Guid uuid)
+
+
+        public (Domain.Models.Customer GetCustomer, IEnumerable<Guid> addressesUuids) GetCustomer(Guid uuid)
         {
-            var customer = base.GetCustomer();
+            var (customer, uuids) = base.GetCustomer();
             customer.Id = Id;
             customer.Uuid = uuid;
 
-            return customer;
+            return (customer,uuids);
         }
     }
 }

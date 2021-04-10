@@ -19,7 +19,7 @@ namespace WebAPI.Models.Address
         public AddressListItem(Domain.Models.Address address)
         {
             Uuid = address.Uuid;
-            Street = address.State;
+            Street = address.Street;
             Number = address.Number;
             ZipCode = address.ZipCode;
             City = address.City;

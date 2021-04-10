@@ -2,7 +2,7 @@
 
 namespace WebAPI.Models.Address
 {
-    public class SaveAddressModel
+    public class AddAddressModel
     {
         [Required]
         public string Street { get; set; }

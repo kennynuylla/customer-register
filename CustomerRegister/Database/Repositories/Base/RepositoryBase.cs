@@ -32,7 +32,7 @@ namespace Database.Repositories.Base
                 .Take(pagination.PerPage);
 
             query = AggregateIncludes(query, includes);
-            query.OrderBy(x => x.Uuid);
+            query = query.OrderBy(x => x.Id);
             var list = await query.ToListAsync();
 
             return new PaginationResult<TModel>

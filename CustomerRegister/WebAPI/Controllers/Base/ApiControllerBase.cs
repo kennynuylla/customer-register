@@ -14,5 +14,7 @@ namespace WebAPI.Controllers.Base
             NotFoundResult => NotFound(),
             _ => BadRequest()
         };
+        
+        protected ActionResult ErrorResult() => new StatusCodeResult(500);
     }
 }

@@ -32,6 +32,7 @@ namespace WebAPI.Controllers
         /// <returns>An existing address</returns>
         /// <response code="200">Returns the address</response>
         /// <response code="400">Bad Request</response>
+        /// <response code="404">Address not found</response>
         /// <response code="500">An error occurred</response>     
         [HttpGet("{id}")]
         public async Task<ActionResult<Address>> Get(Guid id)
@@ -49,14 +50,14 @@ namespace WebAPI.Controllers
         /// <response code="500">An error occurred</response>
         [HttpPost]
         [SwaggerResponseHeader(201, "Location", "string", "The new address URI.")]
-        public async Task<ActionResult> Add(SaveAddressModel model)
+        public async Task<ActionResult> Add(AddAddressModel model)
         {
             var address = model.GetAddress();
             var result =  _addressService.Save(address);
             
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {id = successResult.Result}, null);
-            return BadRequest();
+            return ErrorResult();
         }
 
         /// <summary>
@@ -83,6 +84,23 @@ namespace WebAPI.Controllers
                 Pagination = successResult.Result.Pagination,
                 Total = successResult.Result.Total
             };
+        }
+        
+        /// <summary>
+        /// Updates an address
+        /// </summary>
+        /// <response code="204">Operation successful</response>
+        /// <response code="400" >Bad Request</response>
+        /// <response code="500">An error occurred</response>
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Update(Guid id, UpdateAddressModel model)
+        {
+            var address = model.GetAddress(id);
+            var result =  _addressService.Save(address);
+
+            if (!result.IsSuccessful) return FailResult(result);
+            if (await _unitOfWork.SaveChangesAsync()) return NoContent();
+            return ErrorResult();
         }
     }
 }

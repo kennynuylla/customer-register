@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Database;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Services;
 using Services.DataStructures;
@@ -67,6 +68,41 @@ namespace UnitTests.Services
             Assert.NotEmpty(context.Addresses);
             Assert.Equal(1,context.Addresses.Count());
 
+        }
+        
+        [Fact]
+        public async Task SaveShouldEditExistingEntry()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var uuid = Guid.NewGuid();
+            var address = GetDummyAddress(uuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            const string edited = "Edited";
+            var editedAddress = new Address
+            {
+                City = address.City,
+                Country = edited,
+                Id = address.Id,
+                Number = address.Number,
+                Street = address.Street,
+                Uuid = uuid,
+                ZipCode = address.ZipCode,
+                State = address.State
+            };
+
+            var result = sut.Save(editedAddress);
+            var uniqueAddress = await context.Addresses.FirstAsync();
+            
+            Assert.True(result.IsSuccessful);
+            Assert.Equal(edited, uniqueAddress.Country);
+            Assert.Equal(uuid, uniqueAddress.Uuid);
         }
 
         [Fact]

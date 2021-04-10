@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Database;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Services.DataStructures.Structs;
 using WebAPI.Models.Address;
@@ -41,7 +42,7 @@ namespace IntegrationTests.Controllers
         public async Task AddShouldAddANewAddress()
         {
             var sut = _factory.CreateClient();
-            var address = new SaveAddressModel
+            var address = new AddAddressModel
             {
                 City = City,
                 Country = Country,
@@ -62,7 +63,6 @@ namespace IntegrationTests.Controllers
             
             Assert.NotEmpty(context.Addresses);
             Assert.Equal(1,context.Addresses.Count());
-
         }
 
         [Fact]
@@ -131,6 +131,57 @@ namespace IntegrationTests.Controllers
             
         }
 
+        [Fact]
+        public async Task UpdateShouldUpdateAnExistingRecord()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = _factory.CreateClient();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var uuid = Guid.NewGuid();
+            var address = GetDummyAddress(uuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            const string newCity = "Paraíso do Tocantins";
+            const string newZipCode = "335045-879";
+            const string newCountry = "Bengium";
+            const string newState = "Test";
+            const string newStreet = "Another street";
+            const int newNumber = 800;
+
+            var editedAddress = new UpdateAddressModel()
+            {
+                City = newCity,
+                Country = newCountry,
+                Number = newNumber,
+                State = newState,
+                Street = newStreet,
+                ZipCode = newZipCode,
+                Id = address.Id
+            };
+            
+            var serializedJson = JsonSerializer.Serialize(editedAddress);
+            var contentJson = new StringContent(serializedJson, Encoding.UTF8, "application/json");
+
+            var result = await sut.PutAsync($"Address/Update/{uuid}", contentJson);
+            var texto = await result.Content.ReadAsStringAsync();
+            result.EnsureSuccessStatusCode();
+
+            var uniqueAddress = await context.Addresses.FirstAsync();
+            
+            Assert.NotEmpty(context.Addresses);
+            Assert.Equal(newCity, uniqueAddress.City);
+            Assert.Equal(newCountry, uniqueAddress.Country);
+            Assert.Equal(newState, uniqueAddress.State);
+            Assert.Equal(newZipCode, uniqueAddress.ZipCode);
+            Assert.Equal(newStreet, uniqueAddress.Street);
+            Assert.Equal(newNumber, uniqueAddress.Number);
+            Assert.Equal(uuid, uniqueAddress.Uuid);
+            
+        }
+
         private Address GetDummyAddress() => new Address
         {
             City = City,
@@ -140,6 +191,14 @@ namespace IntegrationTests.Controllers
             Street = Street,
             ZipCode = ZipCode
         };
+
+        private Address GetDummyAddress(Guid uuid)
+        {
+            var address = GetDummyAddress();
+            address.Uuid = uuid;
+
+            return address;
+        }
 
         public void Dispose()
         {

@@ -209,7 +209,7 @@ namespace UnitTests.Repositories
         }
 
         [Fact]
-        public async Task EditShouldUpdateANewEntry()
+        public async Task SaveShouldUpdateANewEntry()
         {
             using var scope = _serviceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();

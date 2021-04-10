@@ -146,7 +146,7 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (address, phone) = await AddPhoneAndAddressAsync(context);
+            var (address, phone) = await LocalPhoneFixture.AddPhoneAndAddressAsync(context);
 
             var phoneToEdit = new LocalPhone
             {
@@ -168,7 +168,7 @@ namespace UnitTests.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var (address, phone) = await AddPhoneAndAddressAsync(context);
+            var (address, phone) = await LocalPhoneFixture.AddPhoneAndAddressAsync(context);
 
             var newAddressUuid = Guid.NewGuid();
             var newAddress = AddressFixture.GetDummyAddress(newAddressUuid);
@@ -199,22 +199,7 @@ namespace UnitTests.Services
             Assert.Equal(newAreaCode, newPhone.AreaCode);
         }
 
-        private static async Task<(Address address, LocalPhone phone)> AddPhoneAndAddressAsync(ApplicationContext context)
-        {
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
 
-            var phoneUuid = Guid.NewGuid();
-            var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
-            await context.LocalPhones.AddAsync(phone);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
-            return (address, phone);
-        }
 
         [Fact]
         public async Task DeleteAsyncShouldSetIsActiveToFalse()
@@ -224,7 +209,7 @@ namespace UnitTests.Services
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (_, phone) = await AddPhoneAndAddressAsync(context);
+            var (_, phone) = await LocalPhoneFixture.AddPhoneAndAddressAsync(context);
 
             var result = await sut.DeleteAsync(phone.Uuid);
             await unitOfWork.SaveChangesAsync();

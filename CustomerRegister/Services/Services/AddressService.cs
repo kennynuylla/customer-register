@@ -13,12 +13,14 @@ namespace Services.Services
     internal class AddressService : IAddressService
     {
         private readonly IAddressRepository _addressRepository;
+        private readonly ILocalPhoneRepository _localPhoneRepository;
         private readonly ILogger<AddressService> _logger;
 
-        public AddressService(IAddressRepository addressRepository, ILogger<AddressService> logger)
+        public AddressService(IAddressRepository addressRepository, ILogger<AddressService> logger, ILocalPhoneRepository localPhoneRepository)
         {
             _addressRepository = addressRepository;
             _logger = logger;
+            _localPhoneRepository = localPhoneRepository;
         }
 
         public async Task<IServiceResult> ListAsync(PaginationData pagination)
@@ -70,6 +72,11 @@ namespace Services.Services
         {
             try
             {
+                var phones = await _localPhoneRepository.GetGuidsFromAddress(uuid);
+                foreach (var phoneUuid in phones)
+                {
+                    await _localPhoneRepository.DeleteAsync(phoneUuid);
+                }
                 await _addressRepository.DeleteAsync(uuid);
                 return new SuccessResult();
             }

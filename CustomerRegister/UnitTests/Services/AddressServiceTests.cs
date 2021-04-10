@@ -156,24 +156,32 @@ namespace UnitTests.Services
         }
 
         [Fact]
-        public async Task DeleteShouldSetIsActiveToFalse()
+        public async Task DeleteShouldSetIsActiveToFalseToAddressAndItsPhones()
         {
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
+            var addressUuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(addressUuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
 
-            await sut.DeleteAsync(uuid);
+            var phoneUuid = Guid.NewGuid();
+            var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
+            await context.LocalPhones.AddAsync(phone);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            await sut.DeleteAsync(addressUuid);
             await unitOfWork.SaveChangesAsync();
 
-            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == addressUuid);
+            var deletedPhone = await context.LocalPhones.FirstAsync(x => x.Uuid == phoneUuid);
             Assert.False(deletedAddress.IsActive);
+            Assert.False(deletedPhone.IsActive);
         }
 
     }

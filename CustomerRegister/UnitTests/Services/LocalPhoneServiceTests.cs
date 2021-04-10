@@ -7,6 +7,7 @@ using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Repositories;
 using Services.Services.Interfaces;
 using UnitTests.Base;
@@ -79,6 +80,41 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
 
             Assert.IsType<NotFoundResult>(await sut.DetailAsync(Guid.NewGuid()));
+        }
+
+        [Fact]
+        public async Task ListAsyncShouldReturnAListOfEntries()
+        {
+            const int total = 5;
+            const int perPage = 8;
+            
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var addressUuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(addressUuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            for (var i = 0; i < total; i++) await context.LocalPhones.AddAsync(LocalPhoneFixture.GetDummyLocalPhone(Guid.NewGuid(), address.Id));
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            var result = await sut.ListAsync(new PaginationData
+            {
+                CurrentPage = 1,
+                PerPage = perPage
+            });
+            var successResult = (SuccessResult<PaginationResult<LocalPhone>>) result;
+            var phones = successResult.Result.Elements;
+            foreach (var phone in phones)
+            {
+                Assert.Equal(LocalPhoneFixture.Number, phone.Number);
+                Assert.Equal(LocalPhoneFixture.AreaCode, phone.AreaCode);
+                Assert.Equal(addressUuid, phone.PhoneAddress.Uuid);
+            }
         }
         
     }

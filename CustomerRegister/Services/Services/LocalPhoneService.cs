@@ -4,6 +4,7 @@ using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
 using Services.DataStructures.Interfaces;
+using Services.DataStructures.Structs;
 using Services.Repositories;
 using Services.Services.Interfaces;
 
@@ -45,6 +46,20 @@ namespace Services.Services
                 var phone = await _localPhoneRepository.GetAsync(uuid, x => x.PhoneAddress);
                 if (phone is null) return new NotFoundResult();
                 return new SuccessResult<LocalPhone>(phone);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while retrieving data");
+                return new FailResult();
+            }
+        }
+
+        public async Task<IServiceResult> ListAsync(PaginationData pagination)
+        {
+            try
+            {
+                var phones = await _localPhoneRepository.ListAsync(pagination, x => x.PhoneAddress);
+                return new SuccessResult<PaginationResult<LocalPhone>>(phones);
             }
             catch (Exception e)
             {

@@ -34,10 +34,10 @@ namespace WebAPI.Controllers
         /// <response code="400">Bad Request</response>
         /// <response code="404">Address not found</response>
         /// <response code="500">An error occurred</response>     
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Address>> Get(Guid id)
+        [HttpGet("{uuid}")]
+        public async Task<ActionResult<Address>> Get(Guid uuid)
         {
-            var result = await _addressService.DetailAsync(id);
+            var result = await _addressService.DetailAsync(uuid);
             if (result is not SuccessResult<Address> successResult) return FailResult(result);
             return successResult.Result;
         }
@@ -56,7 +56,7 @@ namespace WebAPI.Controllers
             var result =  _addressService.Save(address);
             
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
-            if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {id = successResult.Result}, null);
+            if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new {uuid = successResult.Result}, null);
             return ErrorResult();
         }
 
@@ -92,10 +92,10 @@ namespace WebAPI.Controllers
         /// <response code="204">Operation successful</response>
         /// <response code="400" >Bad Request</response>
         /// <response code="500">An error occurred</response>
-        [HttpPut("{id}")]
-        public async Task<ActionResult> Update(Guid id, UpdateAddressModel model)
+        [HttpPut("{uuid}")]
+        public async Task<ActionResult> Update(Guid uuid, UpdateAddressModel model)
         {
-            var address = model.GetAddress(id);
+            var address = model.GetAddress(uuid);
             var result =  _addressService.Save(address);
 
             if (!result.IsSuccessful) return FailResult(result);
@@ -109,10 +109,10 @@ namespace WebAPI.Controllers
         /// <response code="204">Operation successful</response>
         /// <response code="400" >Bad Request</response>
         /// <response code="500">An error occurred</response>
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(Guid id)
+        [HttpDelete("{uuid}")]
+        public async Task<ActionResult> Delete(Guid uuid)
         {
-            var result = await _addressService.DeleteAsync(id);
+            var result = await _addressService.DeleteAsync(uuid);
             if (!result.IsSuccessful) return FailResult(result);
             if (await _unitOfWork.SaveChangesAsync()) return NoContent();
             return ErrorResult();

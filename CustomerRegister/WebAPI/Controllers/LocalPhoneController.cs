@@ -38,7 +38,7 @@ namespace WebAPI.Controllers
             var (phone, addressUuid) = model.GetPhone();
             var result = await _localPhoneService.SaveAsync(phone, addressUuid);
             if (result is not SuccessResult<Guid> successResult) return FailResult(result);
-            if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new{id = successResult.Result}, null);
+            if (await _unitOfWork.SaveChangesAsync()) return CreatedAtAction(nameof(Get), new{uuid = successResult.Result}, null);
             return ErrorResult();
         }
 
@@ -50,10 +50,10 @@ namespace WebAPI.Controllers
         /// <response code="400">Bad Request</response>
         /// <response code="404">Local phone not found</response>
         /// <response code="500">An error occurred</response>     
-        [HttpGet("{id}")]
-        public async Task<ActionResult<LocalPhone>> Get(Guid id)
+        [HttpGet("{uuid}")]
+        public async Task<ActionResult<LocalPhone>> Get(Guid uuid)
         {
-            var result = await _localPhoneService.DetailAsync(id);
+            var result = await _localPhoneService.DetailAsync(uuid);
             if (result is SuccessResult<LocalPhone> successResult) return successResult.Result;
             return FailResult(result);
         }

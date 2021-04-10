@@ -85,6 +85,20 @@ namespace UnitTests.Services
         }
 
         [Fact]
+        public async Task SaveAsyncShouldReturnFailResultGivenExistingEmail()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            const string emailToRepeat = "email@teste.com";
+            var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context, emailToRepeat);
+            var customerWithRepeatedEmail = CustomerFixture.GetDummyCustomer(emailToRepeat);
+            var result = await sut.SaveAsync(customerWithRepeatedEmail);
+            Assert.IsType<FailResult>(result);
+        }
+
+        [Fact]
         public async Task DetailAsyncShouldReturnNotFoundResultGivenNonExistingUuid()
         {
             using var scope = ServiceProvider.CreateScope();

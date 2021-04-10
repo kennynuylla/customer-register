@@ -123,7 +123,6 @@ namespace IntegrationTests.Controllers
             Assert.Equal(customer.Id, savedCustomer.Id);
             Assert.Equal(editRequest.Email, savedCustomer.Email);
             Assert.Equal(editRequest.Name, savedCustomer.Name);
-
         }
     }
 }

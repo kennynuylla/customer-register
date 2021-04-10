@@ -38,9 +38,10 @@ namespace CommonFixtures
             return phone;
         }
 
-        public static async Task<Customer> AddDummyCustomerAsync(ApplicationContext context)
+        public static async Task<Customer> AddDummyCustomerAsync(ApplicationContext context, string email = "")
         {
-            var customer = CustomerFixture.GetDummyCustomer(Guid.NewGuid());
+            var emailToRegister = string.IsNullOrEmpty(email) ? Guid.NewGuid().ToString() : email;
+            var customer = CustomerFixture.GetDummyCustomer(Guid.NewGuid(), emailToRegister);
             await context.Customers.AddAsync(customer);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();

@@ -25,6 +25,11 @@ namespace Services.Services
         {
             try
             {
+                if (await _customerRepository.CheckEmailAlreadyRegisteredAsync(customer.Email))
+                    return new FailResult(new[]
+                    {
+                        "Email already registered."
+                    });
                 var insertedUuid = await _customerRepository.SaveAsync(customer);
                 return insertedUuid == default ? (IServiceResult) new NotFoundResult() : new SuccessResult<Guid>(insertedUuid);
             }

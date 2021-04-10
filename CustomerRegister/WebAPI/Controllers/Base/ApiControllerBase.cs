@@ -10,7 +10,7 @@ namespace WebAPI.Controllers.Base
     {
         protected ActionResult FailResult(IServiceResult result) => result switch
         {
-            FailResult failure => new JsonResult(new {Error = failure.Errors}) {StatusCode = (int) HttpStatusCode.BadRequest},
+            FailResult failure => new JsonResult(new {Errors = failure.Errors}) {StatusCode = (int) HttpStatusCode.BadRequest},
             NotFoundResult => NotFound(),
             _ => BadRequest()
         };

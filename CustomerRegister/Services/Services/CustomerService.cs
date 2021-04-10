@@ -33,5 +33,19 @@ namespace Services.Services
                 return new FailResult();
             }
         }
+
+        public async Task<IServiceResult> DetailAsync(Guid uuid)
+        {
+            try
+            {
+                var customer = await _customerRepository.GetAsync(uuid);
+                return customer is null ? new NotFoundResult() : new SuccessResult<Customer>(customer);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while retrieving data");
+                return new FailResult();
+            }
+        }
     }
 }

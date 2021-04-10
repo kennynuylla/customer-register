@@ -17,7 +17,7 @@ namespace UnitTests.Services
     {
 
         [Fact]
-        public async Task SaveShouldAddANewCustomer()
+        public async Task SaveAsyncShouldAddANewCustomer()
         {
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
@@ -35,7 +35,7 @@ namespace UnitTests.Services
         }
 
         [Fact]
-        public async Task SaveShouldEditExistingEntry()
+        public async Task SaveAsyncShouldEditExistingEntry()
         {
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
@@ -63,7 +63,7 @@ namespace UnitTests.Services
         }
 
         [Fact]
-        public async Task SaveShouldReturnNotFoundResultGivenNonExistingUuid()
+        public async Task SaveAsyncShouldReturnNotFoundResultGivenNonExistingUuid()
         {
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
@@ -81,6 +81,35 @@ namespace UnitTests.Services
             };
             var result = await sut.SaveAsync(editedCustomer);
             Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task DetailAsyncShouldReturnNotFoundResultGivenNonExistingUuid()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
+
+            var result = await sut.DetailAsync(Guid.NewGuid());
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task DetailAsyncShouldReturnTheEntry()
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+
+            var result = await sut.DetailAsync(customer.Uuid);
+            var successResult = (SuccessResult<Customer>) result;
+            var detailedCustomer = successResult.Result;
+            
+            Assert.Equal(customer.Addresses, detailedCustomer.Addresses);
+            Assert.Equal(customer.Name, detailedCustomer.Name);
+            Assert.Equal(customer.Uuid, detailedCustomer.Uuid);
+            Assert.Equal(customer.Id, detailedCustomer.Id);
         }
     }
 }

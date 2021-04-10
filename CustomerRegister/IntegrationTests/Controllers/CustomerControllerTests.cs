@@ -70,11 +70,9 @@ namespace IntegrationTests.Controllers
         {
             using var scope = ServiceProvider.CreateScope();
             var sut = Factory.CreateClient();
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
             var result  = await sut.GetAsync($"Customer/Get/{Guid.NewGuid()}");
             Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
-            
         }
     }
 }

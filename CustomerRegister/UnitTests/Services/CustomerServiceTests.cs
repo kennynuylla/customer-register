@@ -7,6 +7,7 @@ using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Services.Interfaces;
 using UnitTests.Base;
 using Xunit;
@@ -110,6 +111,33 @@ namespace UnitTests.Services
             Assert.Equal(customer.Name, detailedCustomer.Name);
             Assert.Equal(customer.Uuid, detailedCustomer.Uuid);
             Assert.Equal(customer.Id, detailedCustomer.Id);
+        }
+
+        [Fact]
+        public async Task ListAsyncShouldReturnAListOfCustomers()
+        {
+            const int total = 8;
+            const int perPage = 2;
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<ICustomerService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+            var result = await sut.ListAsync(new PaginationData
+            {
+                CurrentPage = 1,
+                PerPage = perPage
+            });
+            var successResult = (SuccessResult<PaginationResult<Customer>>) result;
+            var customers = successResult.Result.Elements;
+
+            foreach (var customer in customers)
+            {
+                Assert.Equal(CustomerFixture.Name, customer.Name);
+                Assert.NotEqual(default, customer.Email);
+                Assert.NotEqual(default, customer.Uuid);
+                Assert.NotEqual(default, customer.Id);
+            }
         }
     }
 }

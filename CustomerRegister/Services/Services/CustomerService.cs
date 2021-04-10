@@ -4,6 +4,7 @@ using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
 using Services.DataStructures.Interfaces;
+using Services.DataStructures.Structs;
 using Services.Repositories;
 using Services.Services.Interfaces;
 
@@ -40,6 +41,20 @@ namespace Services.Services
             {
                 var customer = await _customerRepository.GetAsync(uuid);
                 return customer is null ? new NotFoundResult() : new SuccessResult<Customer>(customer);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while retrieving data");
+                return new FailResult();
+            }
+        }
+
+        public async Task<IServiceResult> ListAsync(PaginationData pagination)
+        {
+            try
+            {
+                var customers = await _customerRepository.ListAsync(pagination);
+                return new SuccessResult<PaginationResult<Customer>>(customers);
             }
             catch (Exception e)
             {

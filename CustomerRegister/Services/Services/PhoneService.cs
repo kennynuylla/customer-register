@@ -4,6 +4,7 @@ using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Services.DataStructures;
 using Services.DataStructures.Interfaces;
+using Services.DataStructures.Structs;
 using Services.Repositories;
 using Services.Services.Interfaces;
 
@@ -49,6 +50,20 @@ namespace Services.Services
             catch (Exception e)
             {
                 _logger.LogError(e, "Error while retrieving phone");
+                return new FailResult();
+            }
+        }
+
+        public async Task<IServiceResult> ListAsync(PaginationData pagination)
+        {
+            try
+            {
+                var result = await _phoneRepository.ListAsync(pagination, x=> x.Customer);
+                return new SuccessResult<PaginationResult<Phone>>(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while listing phones");
                 return new FailResult();
             }
         }

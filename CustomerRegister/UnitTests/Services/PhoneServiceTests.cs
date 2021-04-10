@@ -7,6 +7,7 @@ using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Services.DataStructures;
+using Services.DataStructures.Structs;
 using Services.Services.Interfaces;
 using UnitTests.Base;
 using Xunit;
@@ -140,6 +141,32 @@ namespace UnitTests.Services
             var result = await sut.DetailAsync(Guid.NewGuid());
 
             Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task ListAsyncShouldReturnAListOfEntries()
+        {
+            const int total = 5;
+            const int perPage = 17;
+            using var scope = ServiceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IPhoneService>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyPhoneAsync(context, customer);
+
+            var result = await sut.ListAsync(new PaginationData
+            {
+                CurrentPage = 1,
+                PerPage = perPage
+            });
+            var successResult = (SuccessResult<PaginationResult<Phone>>) result;
+            foreach (var phone in successResult.Result.Elements)
+            {
+                Assert.Equal(PhoneFixture.Number, phone.Number);
+                Assert.Equal(PhoneFixture.AreaCode, phone.AreaCode);
+                Assert.Equal(customer.Id, phone.CustomerId);
+                Assert.Equal(customer.Uuid, phone.Customer.Uuid);
+            }
         }
     }
 }

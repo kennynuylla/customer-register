@@ -46,8 +46,8 @@ namespace Database.Repositories.Base
         public async Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes)
         {
             var query = Set
-                .Where(x => x.Uuid == uuid && x.IsActive)
-                .AsNoTracking();
+                .AsNoTracking()
+                .Where(x => x.Uuid == uuid && x.IsActive);
             
             query = AggregateIncludes(query, includes);
             return await query.FirstOrDefaultAsync();
@@ -71,9 +71,10 @@ namespace Database.Repositories.Base
             return model.Uuid;
         }
 
-        public void Delete(Guid uuid)
+        public async Task DeleteAsync(Guid uuid)
         {
-            throw new NotImplementedException();
+            var addressToDeleteTracked = await Set.FirstAsync(x => x.Uuid == uuid);
+            addressToDeleteTracked.IsActive = false;
         }
     }
 }

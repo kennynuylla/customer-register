@@ -11,6 +11,6 @@ namespace Services.Repositories
         Task<PaginationResult<TModel>> ListAsync(PaginationData pagination, params Expression<Func<TModel, object>>[] includes);
         Task<TModel> GetAsync(Guid uuid, params Expression<Func<TModel, object>>[] includes);
         Guid Save(TModel model);
-        void Delete(Guid uuid);
+        Task DeleteAsync(Guid uuid);
     }
 }

@@ -6,6 +6,6 @@ namespace Domain.Models.Interfaces
     {
         public int Id { get; }
         public Guid Uuid { get; set; }
-        public bool IsActive { get;  }
+        public bool IsActive { get; set; }
     }
 }

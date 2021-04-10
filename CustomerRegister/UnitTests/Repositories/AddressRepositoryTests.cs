@@ -253,6 +253,28 @@ namespace UnitTests.Repositories
             Assert.Equal(newNumber, insertedAddress.Number);
             Assert.Equal(uuid, insertedAddress.Uuid);
         }
+
+        [Fact]
+        public async Task DeleteShouldMarkIsActiveAsFalse()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+            var uuid = Guid.NewGuid();
+            var address = GetDummyAddress(uuid);
+            await context.Addresses.AddAsync(address);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            sut.DeleteAsync(uuid);
+            await unitOfWork.SaveChangesAsync();
+
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            Assert.False(deletedAddress.IsActive);
+
+        }
         
     }
 }

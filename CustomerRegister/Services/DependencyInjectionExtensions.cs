@@ -10,6 +10,7 @@ namespace Services
         {
             serviceCollection
                 .AddScoped<IAddressService, AddressService>()
+                .AddScoped<ICustomerService, CustomerService>()
                 .AddScoped<ILocalPhoneService, LocalPhoneService>();
             
             return serviceCollection;

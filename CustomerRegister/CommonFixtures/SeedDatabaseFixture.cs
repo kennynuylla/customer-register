@@ -37,5 +37,15 @@ namespace CommonFixtures
 
             return phone;
         }
+
+        public static async Task<Customer> AddDummyCustomerAsync(ApplicationContext context)
+        {
+            var customer = CustomerFixture.GetDummyCustomer(Guid.NewGuid());
+            await context.Customers.AddAsync(customer);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+
+            return customer;
+        }
     }
 }

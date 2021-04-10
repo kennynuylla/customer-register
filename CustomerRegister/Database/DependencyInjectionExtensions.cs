@@ -42,6 +42,7 @@ namespace Database
         {
             serviceCollection
                 .AddScoped<IAddressRepository, AddressRepository>()
+                .AddScoped<ICustomerRepository, CustomerRepository>()
                 .AddScoped<ILocalPhoneRepository, LocalPhoneRepository>();
             return serviceCollection;
         }

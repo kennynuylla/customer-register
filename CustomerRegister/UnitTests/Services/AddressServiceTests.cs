@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CommonFixtures;
 using Database;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
@@ -15,51 +16,17 @@ using Xunit;
 
 namespace UnitTests.Services
 {
-    public class AddressService : DatabaseTestsBase
+    public class AddressServiceTests : DatabaseTestsBase
     {
-        private readonly IServiceProvider _serviceProvider;
-        
-        public AddressService()
-        {
-            _serviceProvider = new ServiceCollection()
-                .AddTestDatabase(DatabasePath)
-                .AddLogging()
-                .AddUnitOfWork()
-                .AddRepositories()
-                .AddServices()
-                .BuildServiceProvider();
-        }
-        
-        private static Address GetDummyAddress()
-        {
-            return new Address
-            {
-                City = "Porto Nacional",
-                Country = "Brazil",
-                Number = 300,
-                State = "Tocantins",
-                Street = "Test",
-                ZipCode = "77500-000"
-            };
-        }
-
-        private static Address GetDummyAddress(Guid uuid)
-        {
-            var address = GetDummyAddress();
-            address.Uuid = uuid;
-
-            return address;
-        }
-
         [Fact]
         public async Task SaveShouldAddANewAddressGivenNonExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var address = GetDummyAddress();
+            var address = AddressFixture.GetDummyAddress();
 
             var result = sut.Save(address);
             await unitOfWork.SaveChangesAsync();
@@ -73,13 +40,13 @@ namespace UnitTests.Services
         [Fact]
         public async Task SaveShouldEditExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
-            var address = GetDummyAddress(uuid);
+            var address = AddressFixture.GetDummyAddress(uuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
@@ -108,7 +75,7 @@ namespace UnitTests.Services
         [Fact]
         public async Task DetailAsyncShouldReturnFailResultGivenNonExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
 
             var result = await sut.DetailAsync(Guid.NewGuid());
@@ -118,12 +85,12 @@ namespace UnitTests.Services
         [Fact]
         public async Task DetailAsyncShouldReturnDataGivenExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
-            var address = GetDummyAddress(uuid);
+            var address = AddressFixture.GetDummyAddress(uuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
 
@@ -137,11 +104,11 @@ namespace UnitTests.Services
         public async Task ListAsyncShouldReturnAListOfAddresses()
         {
             const int total = 8;
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress(Guid.NewGuid()));
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(Guid.NewGuid()));
             await context.SaveChangesAsync();
 
             var result = await sut.ListAsync(new PaginationData
@@ -159,13 +126,13 @@ namespace UnitTests.Services
         [Fact]
         public async Task DeleteShouldSetIsActiveToFalse()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
-            var address = GetDummyAddress(uuid);
+            var address = AddressFixture.GetDummyAddress(uuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();

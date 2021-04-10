@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CommonFixtures;
 using Database;
 using Database.UnitOfWork.Interfaces;
 using Domain.Models;
@@ -15,65 +16,25 @@ namespace UnitTests.Repositories
 {
     public class AddressRepositoryTests : DatabaseTestsBase
     {
-        private readonly IServiceProvider _serviceProvider;
-        
-        const string City = "Palmas";
-        const string ZipCode = "77001-004";
-        const string Country = "Brazil";
-        const string State = "Tocantins";
-        const string Street = "Non Existing Street";
-        const int Number = 70;
-
-        public AddressRepositoryTests()
-        {
-            _serviceProvider = new ServiceCollection()
-                .AddTestDatabase(DatabasePath)
-                .AddLogging()
-                .AddUnitOfWork()
-                .AddRepositories()
-                .BuildServiceProvider();
-        }
-        
-        private static Address GetDummyAddress()
-        {
-            return new Address
-            {
-                City = City,
-                Country = Country,
-                State = State,
-                ZipCode = ZipCode,
-                Street = Street,
-                Number = Number
-            };
-        }
-
-        private static Address GetDummyAddress(Guid uuid)
-        {
-            var address = GetDummyAddress();
-            address.Uuid = uuid;
-
-            return address;
-        }
-        
         private static void AssertDummyAddress(Address address)
         {
-            Assert.Equal(City, address.City);
-            Assert.Equal(Country, address.Country);
-            Assert.Equal(State, address.State);
-            Assert.Equal(ZipCode, address.ZipCode);
-            Assert.Equal(Street, address.Street);
-            Assert.Equal(Number, address.Number);
+            Assert.Equal(AddressFixture.City, address.City);
+            Assert.Equal(AddressFixture.Country, address.Country);
+            Assert.Equal(AddressFixture.State, address.State);
+            Assert.Equal(AddressFixture.ZipCode, address.ZipCode);
+            Assert.Equal(AddressFixture.Street, address.Street);
+            Assert.Equal(AddressFixture.Number, address.Number);
         }
 
         [Fact]
         public async Task SaveShouldAddANewAddressGiverNonExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-            
-            var address = GetDummyAddress();
+
+            var address = AddressFixture.GetDummyAddress();
             sut.Save(address);
             var savedChanges = await unitOfWork.SaveChangesAsync();
             var savedAddress = await context.Addresses.FirstAsync();
@@ -86,12 +47,12 @@ namespace UnitTests.Repositories
         [Fact]
         public async Task GetShouldReturnAnExistingAddress()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
             var uuid = Guid.NewGuid();
-            var addressToRetrieve = GetDummyAddress(uuid);
+            var addressToRetrieve = AddressFixture.GetDummyAddress(uuid);
 
             await context.Addresses.AddAsync(addressToRetrieve);
             await context.SaveChangesAsync();
@@ -105,12 +66,12 @@ namespace UnitTests.Repositories
         [Fact]
         public async Task GetShouldReturnNullGivenInactiveRecord()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
             var uuid = Guid.NewGuid();
-            var addressToRetrieve = GetDummyAddress(uuid);
+            var addressToRetrieve = AddressFixture.GetDummyAddress(uuid);
             addressToRetrieve.IsActive = false;
 
             await context.Addresses.AddAsync(addressToRetrieve);
@@ -125,11 +86,11 @@ namespace UnitTests.Repositories
         [InlineData(15,10)]
         public async Task ListAsyncShouldReturnAPaginationWithEntries(int total, int perPage)
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress(Guid.NewGuid()));
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(Guid.NewGuid()));
             await context.SaveChangesAsync();
 
             var pagination = new PaginationData
@@ -159,11 +120,11 @@ namespace UnitTests.Repositories
             const int perPage = 10;
             const int expectedSecondPage = 5;
             
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(GetDummyAddress(Guid.NewGuid()));
+            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(Guid.NewGuid()));
             await context.SaveChangesAsync();
 
             var pagination = new PaginationData
@@ -187,11 +148,11 @@ namespace UnitTests.Repositories
         [Fact]
         public async Task ListAsyncShouldSkipInactiveItems()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var address = GetDummyAddress(Guid.NewGuid());
+            var address = AddressFixture.GetDummyAddress(Guid.NewGuid());
             address.IsActive = false;
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
@@ -211,13 +172,13 @@ namespace UnitTests.Repositories
         [Fact]
         public async Task SaveShouldUpdateANewEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
-            var address = GetDummyAddress(uuid);
+            var address = AddressFixture.GetDummyAddress(uuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
@@ -257,13 +218,13 @@ namespace UnitTests.Repositories
         [Fact]
         public async Task DeleteShouldMarkIsActiveAsFalse()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             var uuid = Guid.NewGuid();
-            var address = GetDummyAddress(uuid);
+            var address = AddressFixture.GetDummyAddress(uuid);
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
@@ -278,7 +239,7 @@ namespace UnitTests.Repositories
         [Fact]
         public async Task DeleteAsyncShouldNotThrowExceptionsGivenNonExistingEntry()
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             await sut.DeleteAsync(Guid.NewGuid());

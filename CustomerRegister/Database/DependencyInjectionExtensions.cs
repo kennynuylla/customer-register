@@ -40,7 +40,9 @@ namespace Database
         
         public static IServiceCollection AddRepositories(this IServiceCollection serviceCollection)
         {
-            serviceCollection.AddScoped<IAddressRepository, AddressRepository>();
+            serviceCollection
+                .AddScoped<IAddressRepository, AddressRepository>()
+                .AddScoped<ILocalPhoneRepository, LocalPhoneRepository>();
             return serviceCollection;
         }
 

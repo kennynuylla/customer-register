@@ -1,5 +1,4 @@
-﻿using Domain.Enums;
-using Domain.Models.Base;
+﻿using Domain.Models.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +11,6 @@ namespace Database.Configurations.Base
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Number).IsRequired();
             builder.Property(x => x.AreaCode).IsRequired();
-            builder.Property(x => x.Type).HasConversion(x => (int) x, x => (PhoneType) x);
         }
     }
 }

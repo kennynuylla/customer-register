@@ -8,7 +8,10 @@ namespace Services
     {
         public static IServiceCollection AddServices(this IServiceCollection serviceCollection)
         {
-            serviceCollection.AddScoped<IAddressService, AddressService>();
+            serviceCollection
+                .AddScoped<IAddressService, AddressService>()
+                .AddScoped<ILocalPhoneService, LocalPhoneService>();
+            
             return serviceCollection;
         }
     }

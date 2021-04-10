@@ -57,14 +57,9 @@ namespace IntegrationTests.Controllers
             using var scope = ServiceProvider.CreateScope();
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress();
-            address.Uuid = uuid;
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-
-            var result = await sut.GetAsync($"Address/Get/{uuid}");
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
+            var result = await sut.GetAsync($"Address/Get/{address.Uuid}");
             result.EnsureSuccessStatusCode();
 
             var serializedResult = await result.Content.ReadAsStringAsync();
@@ -101,8 +96,7 @@ namespace IntegrationTests.Controllers
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress());
-            await context.SaveChangesAsync();
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var result = await sut.GetAsync($"Address/List?currentPage=1&perPage={perPage}");
             result.EnsureSuccessStatusCode();
@@ -131,12 +125,8 @@ namespace IntegrationTests.Controllers
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
+            
             const string newCity = "Paraíso do Tocantins";
             const string newZipCode = "335045-879";
             const string newCountry = "Bengium";
@@ -158,7 +148,7 @@ namespace IntegrationTests.Controllers
             var serializedJson = JsonSerializer.Serialize(editedAddress);
             var contentJson = new StringContent(serializedJson, Encoding.UTF8, "application/json");
 
-            var result = await sut.PutAsync($"Address/Update/{uuid}", contentJson);
+            var result = await sut.PutAsync($"Address/Update/{address.Uuid}", contentJson);
             result.EnsureSuccessStatusCode();
 
             var uniqueAddress = await context.Addresses.FirstAsync();
@@ -170,7 +160,7 @@ namespace IntegrationTests.Controllers
             Assert.Equal(newZipCode, uniqueAddress.ZipCode);
             Assert.Equal(newStreet, uniqueAddress.Street);
             Assert.Equal(newNumber, uniqueAddress.Number);
-            Assert.Equal(uuid, uniqueAddress.Uuid);
+            Assert.Equal(address.Uuid, uniqueAddress.Uuid);
         }
 
         [Fact]
@@ -179,16 +169,13 @@ namespace IntegrationTests.Controllers
             using var scope = ServiceProvider.CreateScope();
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            var uuid = Guid.NewGuid();
-            await context.AddAsync(AddressFixture.GetDummyAddress(uuid));
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
-            var result = await sut.DeleteAsync($"Address/Delete/{uuid}");
+            var result = await sut.DeleteAsync($"Address/Delete/{address.Uuid}");
             result.EnsureSuccessStatusCode();
 
-            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == address.Uuid);
             Assert.Equal(1,context.Addresses.Count());
             Assert.False(deletedAddress.IsActive);
         }

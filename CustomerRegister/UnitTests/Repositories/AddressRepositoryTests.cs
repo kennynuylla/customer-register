@@ -50,12 +50,9 @@ namespace UnitTests.Repositories
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-            
-            var uuid = Guid.NewGuid();
-            var addressToRetrieve = AddressFixture.GetDummyAddress(uuid);
 
-            await context.Addresses.AddAsync(addressToRetrieve);
-            await context.SaveChangesAsync();
+            var addressToRetrieve = await SeedDatabaseFixture.AddDummyAddressAsync(context);
+            var uuid = addressToRetrieve.Uuid;
             var retrievedAddress = await sut.GetAsync(uuid);
             
             Assert.NotNull(retrievedAddress);
@@ -69,7 +66,7 @@ namespace UnitTests.Repositories
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-            
+
             var uuid = Guid.NewGuid();
             var addressToRetrieve = AddressFixture.GetDummyAddress(uuid);
             addressToRetrieve.IsActive = false;
@@ -90,8 +87,7 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(Guid.NewGuid()));
-            await context.SaveChangesAsync();
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var pagination = new PaginationData
             {
@@ -124,8 +120,7 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(Guid.NewGuid()));
-            await context.SaveChangesAsync();
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var pagination = new PaginationData
             {
@@ -152,7 +147,8 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var address = AddressFixture.GetDummyAddress(Guid.NewGuid());
+            var uuid = Guid.NewGuid();
+            var address = AddressFixture.GetDummyAddress(uuid);
             address.IsActive = false;
             await context.Addresses.AddAsync(address);
             await context.SaveChangesAsync();
@@ -176,12 +172,8 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             const string newCity = "Paraíso do Tocantins";
             const string newZipCode = "335045-879";
@@ -197,7 +189,7 @@ namespace UnitTests.Repositories
                 Number = newNumber,
                 State = newState,
                 Street = newStreet,
-                Uuid = uuid,
+                Uuid = address.Uuid,
                 ZipCode = newZipCode,
                 Id = address.Id
             };
@@ -212,7 +204,7 @@ namespace UnitTests.Repositories
             Assert.Equal(newZipCode, insertedAddress.ZipCode);
             Assert.Equal(newStreet, insertedAddress.Street);
             Assert.Equal(newNumber, insertedAddress.Number);
-            Assert.Equal(uuid, insertedAddress.Uuid);
+            Assert.Equal(address.Uuid, insertedAddress.Uuid);
         }
 
         [Fact]
@@ -222,17 +214,13 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
-            await sut.DeleteAsync(uuid);
+            await sut.DeleteAsync(address.Uuid);
             await unitOfWork.SaveChangesAsync();
 
-            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == uuid);
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == address.Uuid);
             Assert.False(deletedAddress.IsActive);
         }
         

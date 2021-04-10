@@ -17,7 +17,7 @@ namespace UnitTests.Repositories
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneRepository>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (address, phone) = await SeedDatabaseFixture.AddPhoneAndAddressAsync(context);
+            var (address, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
 
             var result = await sut.GetGuidsFromAddress(address.Uuid);
             

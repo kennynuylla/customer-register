@@ -44,12 +44,8 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             const string edited = "Edited";
             var editedAddress = new Address
@@ -59,7 +55,7 @@ namespace UnitTests.Services
                 Id = address.Id,
                 Number = address.Number,
                 Street = address.Street,
-                Uuid = uuid,
+                Uuid = address.Uuid,
                 ZipCode = address.ZipCode,
                 State = address.State
             };
@@ -70,7 +66,7 @@ namespace UnitTests.Services
             
             Assert.True(result.IsSuccessful);
             Assert.Equal(edited, uniqueAddress.Country);
-            Assert.Equal(uuid, uniqueAddress.Uuid);
+            Assert.Equal(address.Uuid, uniqueAddress.Uuid);
         }
 
         [Fact]
@@ -80,12 +76,8 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             const string edited = "Edited";
             var editedAddress = new Address
@@ -101,6 +93,7 @@ namespace UnitTests.Services
             };
 
             var result = await sut.SaveAsync(editedAddress);
+            await unitOfWork.SaveChangesAsync();
             Assert.IsType<NotFoundResult>(result);
         }
 
@@ -120,13 +113,10 @@ namespace UnitTests.Services
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            var uuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(uuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-
-            var result = await sut.DetailAsync(uuid);
+            var result = await sut.DetailAsync(address.Uuid);
             var success = (SuccessResult<Address>) result;
             
             Assert.NotNull(success.Result);
@@ -140,8 +130,7 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<IAddressService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            for (var i = 0; i < total; i++) await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(Guid.NewGuid()));
-            await context.SaveChangesAsync();
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var result = await sut.ListAsync(new PaginationData
             {
@@ -163,23 +152,13 @@ namespace UnitTests.Services
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            var (address, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
 
-            var phoneUuid = Guid.NewGuid();
-            var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
-            await context.LocalPhones.AddAsync(phone);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
-            await sut.DeleteAsync(addressUuid);
+            await sut.DeleteAsync(address.Uuid);
             await unitOfWork.SaveChangesAsync();
 
-            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == addressUuid);
-            var deletedPhone = await context.LocalPhones.FirstAsync(x => x.Uuid == phoneUuid);
+            var deletedAddress = await context.Addresses.FirstAsync(x => x.Uuid == address.Uuid);
+            var deletedPhone = await context.LocalPhones.FirstAsync(x => x.Uuid == phone.Uuid);
             Assert.False(deletedAddress.IsActive);
             Assert.False(deletedPhone.IsActive);
         }

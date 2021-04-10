@@ -29,17 +29,14 @@ namespace IntegrationTests.Controllers
             using var scope = ServiceProvider.CreateScope();
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            var addressUuid = Guid.NewGuid();
-            await context.Addresses.AddAsync(AddressFixture.GetDummyAddress(addressUuid));
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var request = new AddLocalPhoneModel
             {
                 Number = LocalPhoneFixture.Number,
                 AreaCode = LocalPhoneFixture.AreaCode,
-                AddressUuid = addressUuid
+                AddressUuid = address.Uuid
             };
 
             var serializedRequest = JsonSerializer.Serialize(request);
@@ -69,12 +66,8 @@ namespace IntegrationTests.Controllers
             using var scope = ServiceProvider.CreateScope();
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var phoneUuid = Guid.NewGuid();
             var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
@@ -117,11 +110,7 @@ namespace IntegrationTests.Controllers
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             for (var i = 0; i < total; i++) await context.LocalPhones.AddAsync(LocalPhoneFixture.GetDummyLocalPhone(Guid.NewGuid(), address.Id));
             await context.SaveChangesAsync();
@@ -137,7 +126,7 @@ namespace IntegrationTests.Controllers
             {
                 Assert.Equal(LocalPhoneFixture.Number, localPhone.Number);
                 Assert.Equal(LocalPhoneFixture.AreaCode, localPhone.AreaCode);
-                Assert.Equal(addressUuid, localPhone.AddressUuid);
+                Assert.Equal(address.Uuid, localPhone.AddressUuid);
                 Assert.NotEqual(default, localPhone.AddressDescription);
             }
         }
@@ -149,12 +138,8 @@ namespace IntegrationTests.Controllers
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
+            
             var phoneUuid = Guid.NewGuid();
             var phone = LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id);
             await context.LocalPhones.AddAsync(phone);
@@ -167,7 +152,7 @@ namespace IntegrationTests.Controllers
                 Id = phone.Id,
                 Number = newNumber,
                 AreaCode = phone.AreaCode,
-                AddressUuid = addressUuid
+                AddressUuid = address.Uuid
             };
             var serializedRequest = JsonSerializer.Serialize(newPhone);
             var contentRequest = new StringContent(serializedRequest, Encoding.Default, "application/json");
@@ -190,7 +175,7 @@ namespace IntegrationTests.Controllers
             var sut = Factory.CreateClient();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (_, phone) = await SeedDatabaseFixture.AddPhoneAndAddressAsync(context);
+            var (_, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
 
             var result = await sut.DeleteAsync($"LocalPhone/Delete/{phone.Uuid}");
             result.EnsureSuccessStatusCode();

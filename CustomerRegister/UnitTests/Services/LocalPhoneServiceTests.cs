@@ -25,10 +25,7 @@ namespace UnitTests.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var address = AddressFixture.GetDummyAddress(Guid.NewGuid());
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var result = await sut.SaveAsync(LocalPhoneFixture.GetDummyLocalPhone(address.Id), address.Uuid);
             await unitOfWork.SaveChangesAsync();
@@ -48,17 +45,9 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var phoneUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(Guid.NewGuid());
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            var (address, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
 
-            await context.LocalPhones.AddAsync(LocalPhoneFixture.GetDummyLocalPhone(phoneUuid, address.Id));
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
-            var result = await sut.DetailAsync(phoneUuid);
+            var result = await sut.DetailAsync(phone.Uuid);
             var successResult = (SuccessResult<LocalPhone>) result;
             var insertedPhone = successResult.Result;
             var insertedAddress = insertedPhone.PhoneAddress;
@@ -91,16 +80,10 @@ namespace UnitTests.Services
             using var scope = ServiceProvider.CreateScope();
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-
-            for (var i = 0; i < total; i++) await context.LocalPhones.AddAsync(LocalPhoneFixture.GetDummyLocalPhone(Guid.NewGuid(), address.Id));
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            for (var i = 0; i < total; i++) await SeedDatabaseFixture.AddDummyPhoneAsync(context, address);
 
             var result = await sut.ListAsync(new PaginationData
             {
@@ -113,7 +96,7 @@ namespace UnitTests.Services
             {
                 Assert.Equal(LocalPhoneFixture.Number, phone.Number);
                 Assert.Equal(LocalPhoneFixture.AreaCode, phone.AreaCode);
-                Assert.Equal(addressUuid, phone.PhoneAddress.Uuid);
+                Assert.Equal(address.Uuid, phone.PhoneAddress.Uuid);
             }
         }
 
@@ -124,18 +107,14 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var addressUuid = Guid.NewGuid();
-            var address = AddressFixture.GetDummyAddress(addressUuid);
-            await context.Addresses.AddAsync(address);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
+            var address = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
             var dummyPhone = new LocalPhone
             {
                 Uuid = Guid.NewGuid()
             };
 
-            var result = await sut.SaveAsync(dummyPhone, addressUuid);
+            var result = await sut.SaveAsync(dummyPhone, address.Uuid);
             Assert.IsType<NotFoundResult>(result);
         }
 
@@ -146,7 +125,7 @@ namespace UnitTests.Services
             var sut = scope.ServiceProvider.GetRequiredService<ILocalPhoneService>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (address, phone) = await SeedDatabaseFixture.AddPhoneAndAddressAsync(context);
+            var (_, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
 
             var phoneToEdit = new LocalPhone
             {
@@ -168,14 +147,9 @@ namespace UnitTests.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var (address, phone) = await SeedDatabaseFixture.AddPhoneAndAddressAsync(context);
+            var (address, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
+            var newAddress = await SeedDatabaseFixture.AddDummyAddressAsync(context);
 
-            var newAddressUuid = Guid.NewGuid();
-            var newAddress = AddressFixture.GetDummyAddress(newAddressUuid);
-            await context.Addresses.AddAsync(newAddress);
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-            
             const string newNumber = "4578-8795";
             const string newAreaCode = "84";
             var phoneToEdit = new LocalPhone
@@ -193,7 +167,7 @@ namespace UnitTests.Services
             Assert.True(result.IsSuccessful);
             Assert.Equal(phone.Uuid, newPhone.Uuid);
             Assert.Equal(phone.Id, newPhone.Id);
-            Assert.Equal(newAddressUuid, newPhone.PhoneAddress.Uuid);
+            Assert.Equal(newAddress.Uuid, newPhone.PhoneAddress.Uuid);
             Assert.NotEqual(address.Uuid, newPhone.PhoneAddress.Uuid);
             Assert.Equal(newNumber, newPhone.Number);
             Assert.Equal(newAreaCode, newPhone.AreaCode);
@@ -209,7 +183,7 @@ namespace UnitTests.Services
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-            var (_, phone) = await SeedDatabaseFixture.AddPhoneAndAddressAsync(context);
+            var (_, phone) = await SeedDatabaseFixture.AddDummyPhoneAndAddressAsync(context);
 
             var result = await sut.DeleteAsync(phone.Uuid);
             await unitOfWork.SaveChangesAsync();

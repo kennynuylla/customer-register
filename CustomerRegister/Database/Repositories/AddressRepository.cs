@@ -20,6 +20,6 @@ namespace Database.Repositories
             .Where(x => x.Customers.Any(x => x.Uuid == uuid))
             .ToListAsync();
 
-        public async Task<Address> GetTrackedAsync(Guid uuid) => await Set.FirstAsync(x => x.Uuid == uuid);
+        public async Task<Address> GetTrackedAsync(Guid uuid) => await Set.FirstAsync(x => x.Uuid == uuid && x.IsActive);
     }
 }

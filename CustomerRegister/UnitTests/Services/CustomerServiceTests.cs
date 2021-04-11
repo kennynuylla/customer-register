@@ -122,12 +122,12 @@ namespace UnitTests.Services
             var customer = await SeedDatabaseFixture.AddDummyCustomerAsync(context);
 
             var result = await sut.DetailAsync(customer.Uuid);
-            var successResult = (SuccessResult<Customer>) result;
+            var successResult = (SuccessResult<CustomerContainer>) result;
             var detailedCustomer = successResult.Result;
             
-            Assert.Equal(customer.Name, detailedCustomer.Name);
-            Assert.Equal(customer.Uuid, detailedCustomer.Uuid);
-            Assert.Equal(customer.Id, detailedCustomer.Id);
+            Assert.Equal(customer.Name, detailedCustomer.Customer.Name);
+            Assert.Equal(customer.Uuid, detailedCustomer.Customer.Uuid);
+            Assert.Equal(customer.Id, detailedCustomer.Customer.Id);
             Assert.NotEmpty(detailedCustomer.Addresses);
         }
 

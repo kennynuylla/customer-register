@@ -18,14 +18,16 @@ namespace Services.Services
         private  readonly ICustomerRepository _customerRepository;
         private readonly IAddressRepository _addressRepository;
         private readonly IPhoneRepository _phoneRepository;
+        private readonly ILocalPhoneRepository _localPhoneRepository;
         private  readonly ILogger<CustomerService> _logger;
 
-        public CustomerService(ICustomerRepository customerRepository, ILogger<CustomerService> logger, IPhoneRepository phoneRepository, IAddressRepository addressRepository)
+        public CustomerService(ICustomerRepository customerRepository, ILogger<CustomerService> logger, IPhoneRepository phoneRepository, IAddressRepository addressRepository, ILocalPhoneRepository localPhoneRepository)
         {
             _customerRepository = customerRepository;
             _logger = logger;
             _phoneRepository = phoneRepository;
             _addressRepository = addressRepository;
+            _localPhoneRepository = localPhoneRepository;
         }
 
         public async Task<IServiceResult> SaveAsync(Customer customer, IEnumerable<Guid> addresses)
@@ -67,16 +69,36 @@ namespace Services.Services
             try
             {
                 var address = await _addressRepository.GetAddressesFromCustomer(uuid);
+                var localPhones = await GetPhonesAsync(address);
+                var phones = await _phoneRepository.GetPhonesFromCustomerAsync(uuid);
                 var customer = await _customerRepository.GetAsync(uuid, x=> x.Addresses);
                 if (customer is null) return new NotFoundResult();
-                customer.Addresses = address;
-                return new SuccessResult<Customer>(customer);
+                var result = new CustomerContainer
+                {
+                    Customer = customer,
+                    Addresses = address,
+                    LocalPhones = localPhones,
+                    Phones = phones
+                };
+                return new SuccessResult<CustomerContainer>(result);
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Error while retrieving data");
                 return new FailResult();
             }
+        }
+
+        private async Task<IEnumerable<LocalPhone>> GetPhonesAsync(IEnumerable<Address> addresses)
+        {
+            var phones = new List<LocalPhone>();
+            foreach (var address in addresses)
+            {
+                var phone = await _localPhoneRepository.GetFromAddressAsync(address.Uuid);
+                phones.AddRange(phone);
+            }
+
+            return phones;
         }
 
         public async Task<IServiceResult> ListAsync(PaginationData pagination)

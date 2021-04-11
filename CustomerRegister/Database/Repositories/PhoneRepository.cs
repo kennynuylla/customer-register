@@ -18,5 +18,9 @@ namespace Database.Repositories
 
         public async Task<IEnumerable<Guid>> GetUuidsFromCustomer(Guid customerUuid) =>
             await Set.AsNoTracking().Where(x => x.Customer.Uuid == customerUuid).Select(x => x.Uuid).ToListAsync();
+
+        public async Task<IEnumerable<Phone>> GetPhonesFromCustomerAsync(Guid customerUuid) => await
+            Set.AsNoTracking().Where(x => x.Customer.Uuid == customerUuid && x.IsActive)
+                .ToListAsync();
     }
 }

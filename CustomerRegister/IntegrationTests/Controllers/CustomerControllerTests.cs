@@ -11,6 +11,7 @@ using Domain.Models;
 using IntegrationTests.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Services.DataStructures;
 using Services.DataStructures.Structs;
 using WebAPI.Models.Customer;
 using Xunit;
@@ -58,13 +59,17 @@ namespace IntegrationTests.Controllers
             var result = await sut.GetAsync($"Customer/Get/{customer.Uuid}");
             result.EnsureSuccessStatusCode();
             var serializedResult = await result.Content.ReadAsStringAsync();
-            var detailedCustomer = JsonSerializer.Deserialize<Customer>(serializedResult, scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
+            var detailedCustomer = JsonSerializer.Deserialize<DetailCustomerModel>(serializedResult, scope.ServiceProvider.GetRequiredService<JsonSerializerOptions>());
             
             Assert.NotNull(detailedCustomer);
             Assert.Equal(customer.Email, detailedCustomer.Email);
             Assert.Equal(customer.Name, detailedCustomer.Name);
             Assert.Equal(customer.Uuid, detailedCustomer.Uuid);
             Assert.Equal(customer.Id, detailedCustomer.Id);
+            Assert.NotNull(detailedCustomer.Addresses);
+            Assert.NotNull(detailedCustomer.Phones);
+            Assert.NotNull(detailedCustomer.LocalPhones);
+            Assert.NotNull(detailedCustomer.Roomates);
         }
 
         [Fact]

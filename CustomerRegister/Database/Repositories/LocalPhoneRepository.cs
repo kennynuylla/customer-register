@@ -22,5 +22,9 @@ namespace Database.Repositories
                 .Where(x => x.PhoneAddress.Uuid == addressUuid)
                 .Select(x => x.Uuid)
                 .ToListAsync();
+
+        public async Task<IEnumerable<LocalPhone>> GetFromAddressAsync(Guid addressUuid) => await Set.AsNoTracking()
+            .Where(x => x.PhoneAddress.Uuid == addressUuid && x.IsActive)
+            .ToListAsync();
     }
 }

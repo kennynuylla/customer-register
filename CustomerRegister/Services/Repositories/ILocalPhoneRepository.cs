@@ -9,5 +9,6 @@ namespace Services.Repositories
     public interface ILocalPhoneRepository : IRepositoryBase<LocalPhone>
     {
         Task<IEnumerable<Guid>> GetGuidsFromAddress(Guid addressUuid);
+        Task<IEnumerable<LocalPhone>> GetFromAddressAsync(Guid addressUuid);
     }
 }

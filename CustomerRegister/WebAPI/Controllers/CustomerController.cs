@@ -50,11 +50,11 @@ namespace WebAPI.Controllers
         /// <response code="404">customer not found</response>
         /// <response code="500">An error occurred</response>     
         [HttpGet("{uuid}")]
-        public async Task<ActionResult<Customer>> Get(Guid uuid)
+        public async Task<ActionResult<DetailCustomerModel>> Get(Guid uuid)
         {
             var result = await _customerService.DetailAsync(uuid);
-            if (result is not SuccessResult<Customer> successResult) return FailResult(result);
-            return successResult.Result;
+            if (result is not SuccessResult<CustomerContainer> successResult) return FailResult(result);
+            return  new DetailCustomerModel(successResult.Result);
         }
 
         /// <summary>
